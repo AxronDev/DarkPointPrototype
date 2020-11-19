@@ -1,0 +1,7 @@
+{
+	"files.exclude": {
+		"F:/Documents/LearningUnrealEngine/RTSPrototype/.vscode": true,
+		"F:/Documents/LearningUnrealEngine/RTSPrototype/Content": true,
+		"F:/Documents/LearningUnrealEngine/RTSPrototype/Intermediate": true
+	}
+}
