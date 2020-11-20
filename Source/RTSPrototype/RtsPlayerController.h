@@ -65,7 +65,6 @@ private:
 	void CreateUnit();
 
 	void PositionPlacement();
-	void Place();
 
 	void ChangeState(EPlayerState NewState);
 

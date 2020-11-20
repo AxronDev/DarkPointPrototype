@@ -1,7 +1,10 @@
 {
 	"files.exclude": {
-		"F:/Documents/LearningUnrealEngine/RTSPrototype/.vscode": true,
-		"F:/Documents/LearningUnrealEngine/RTSPrototype/Content": true,
-		"F:/Documents/LearningUnrealEngine/RTSPrototype/Intermediate": true
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/.git": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/.vscode": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/Content": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/DerivedDataCache": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/Intermediate": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/Saved": true
 	}
 }

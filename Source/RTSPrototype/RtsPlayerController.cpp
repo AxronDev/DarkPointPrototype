@@ -5,6 +5,7 @@
 #include "RTSPrototypeCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "CameraPawn.h"
+#include "Components/BoxComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "RTSPrototype/GameHUD.h"
 #include "Building.h"
@@ -28,9 +29,12 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      {
           if(PlayerPawn->Units >= 1)
           {
-               PlayerPawn->Units -= 1;
-               ChangeState(EPlayerState::Default);
-               CreateUnit();
+               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true)
+               {
+                    PlayerPawn->Units -= 1;
+                    ChangeState(EPlayerState::Default);
+                    CreateUnit();
+               }
           }
      }
 }
@@ -195,20 +199,16 @@ void ARtsPlayerController::CreateUnit()
 void ARtsPlayerController::PositionPlacement() 
 {
      GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
-     //Hit.Location.Z = 170.f;
+     if(Cast<ARTSPrototypeCharacter>(PlacementBuffer))
+     {
+          Hit.Location.Z += 100.f;
+     }
 
 	if (Hit.bBlockingHit)
 	{
-          AActor* HitActor = Hit.GetActor();
-          FString HitActorName = HitActor->GetDebugName(HitActor);
           PlacementBuffer->SetActorLocation(Hit.Location);
      }
 
-}
-
-void ARtsPlayerController::Place() 
-{
-     
 }
 
 void ARtsPlayerController::ChangeState(EPlayerState NewState) 

@@ -15,9 +15,6 @@
 
 ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 {
-	Root = CreateDefaultSubobject<UBoxComponent>("Root");
-	SetRootComponent(Root);
-
 	// Set size for player capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -31,6 +28,10 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 640.f, 0.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
+
+	// Create Box Collision to check if the character can spawn
+	SpawnSpace = CreateDefaultSubobject<UBoxComponent>("SpawnSpace");
+	SpawnSpace->SetupAttachment(RootComponent);
 
 	// Create a decal in the world to show the cursor's location
 	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
@@ -52,11 +53,28 @@ void ARTSPrototypeCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	CursorToWorld->SetVisibility(false);
+	SpawnSpace->OnComponentBeginOverlap.AddDynamic(this, &ARTSPrototypeCharacter::UpdateToOverlap);
+	SpawnSpace->OnComponentEndOverlap.AddDynamic(this, &ARTSPrototypeCharacter::UpdateNotOverlap);
 }
 
 float ARTSPrototypeCharacter::GetHealth() 
 {
 	return Health;
+}
+
+void ARTSPrototypeCharacter::Attack() 
+{
+	
+}
+
+void ARTSPrototypeCharacter::UpdateToOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) 
+{
+	bHasSpace = false;
+}
+
+void ARTSPrototypeCharacter::UpdateNotOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) 
+{
+	bHasSpace = true;
 }
 
 void ARTSPrototypeCharacter::Tick(float DeltaSeconds)

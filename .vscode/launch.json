@@ -5,7 +5,7 @@
 			"name": "RTSPrototype (Debug)",
 			"request": "launch",
 			"preLaunchTask": "RTSPrototype Win64 Debug Build",
-			"program": "F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\Binaries\\Win64\\UE4-Win64-Debug.exe",
+			"program": "F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Binaries\\Win64\\UE4-Win64-Debug.exe",
 			"args": [
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
@@ -18,7 +18,7 @@
 			"name": "RTSPrototype (DebugGame)",
 			"request": "launch",
 			"preLaunchTask": "RTSPrototype Win64 DebugGame Build",
-			"program": "F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\Binaries\\Win64\\UE4-Win64-DebugGame.exe",
+			"program": "F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Binaries\\Win64\\UE4-Win64-DebugGame.exe",
 			"args": [
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
@@ -31,7 +31,7 @@
 			"name": "RTSPrototype (Development)",
 			"request": "launch",
 			"preLaunchTask": "RTSPrototype Win64 Development Build",
-			"program": "F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\Binaries\\Win64\\UE4.exe",
+			"program": "F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Binaries\\Win64\\UE4.exe",
 			"args": [
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
@@ -44,7 +44,7 @@
 			"name": "RTSPrototype (Shipping)",
 			"request": "launch",
 			"preLaunchTask": "RTSPrototype Win64 Shipping Build",
-			"program": "F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\Binaries\\Win64\\UE4-Win64-Shipping.exe",
+			"program": "F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Binaries\\Win64\\UE4-Win64-Shipping.exe",
 			"args": [
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
@@ -57,7 +57,7 @@
 			"name": "RTSPrototype (Test)",
 			"request": "launch",
 			"preLaunchTask": "RTSPrototype Win64 Test Build",
-			"program": "F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\Binaries\\Win64\\UE4-Win64-Test.exe",
+			"program": "F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Binaries\\Win64\\UE4-Win64-Test.exe",
 			"args": [
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
@@ -72,7 +72,7 @@
 			"preLaunchTask": "RTSPrototypeEditor Win64 Debug Build",
 			"program": "C:\\Program Files\\Epic Games\\UE_4.25\\Engine\\Binaries\\Win64\\UE4Editor-Win64-Debug.exe",
 			"args": [
-				"F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\RTSPrototype.uproject"
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject"
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
 			"stopAtEntry": false,
@@ -86,7 +86,7 @@
 			"preLaunchTask": "RTSPrototypeEditor Win64 DebugGame Build",
 			"program": "C:\\Program Files\\Epic Games\\UE_4.25\\Engine\\Binaries\\Win64\\UE4Editor-Win64-DebugGame.exe",
 			"args": [
-				"F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\RTSPrototype.uproject"
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject"
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
 			"stopAtEntry": false,
@@ -100,7 +100,7 @@
 			"preLaunchTask": "RTSPrototypeEditor Win64 Development Build",
 			"program": "C:\\Program Files\\Epic Games\\UE_4.25\\Engine\\Binaries\\Win64\\UE4Editor.exe",
 			"args": [
-				"F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\RTSPrototype.uproject"
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject"
 			],
 			"cwd": "C:\\Program Files\\Epic Games\\UE_4.25",
 			"stopAtEntry": false,
@@ -117,7 +117,7 @@
 			"args": [
 				"-projectfiles",
 				"-vscode",
-				"-project=\"F:\\Documents\\LearningUnrealEngine\\RTSPrototype\\RTSPrototype.uproject\"",
+				"-project=\"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject\"",
 				"-game",
 				"-engine"
 			],

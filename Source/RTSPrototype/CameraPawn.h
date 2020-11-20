@@ -38,7 +38,7 @@ public:
 	TArray<AActor*> MyUnits;
 
 	UPROPERTY(BlueprintReadOnly)
-	float Gold = 175;
+	float Gold = 250;
 	UPROPERTY(BlueprintReadOnly)
 	float Units;
 
