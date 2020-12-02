@@ -39,6 +39,11 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      }
 }
 
+void ARtsPlayerController::SetAggression() 
+{
+     bAggressive = !bAggressive;
+}
+
 void ARtsPlayerController::BeginPlay()
 {
      HUD = Cast<AGameHUD>(GetHUD());
@@ -62,6 +67,7 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("BuildUnitProduction", IE_Released, this, &ARtsPlayerController::CreateUnitBuilding);
 
      InputComponent->BindAction("PlaceUnit", IE_Released, this, &ARtsPlayerController::CreateUnit);
+     InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::SetAggression);
 }
 
 void ARtsPlayerController::MoveTo()
@@ -75,8 +81,20 @@ void ARtsPlayerController::MoveTo()
 			// We hit something, cycle through selected units and move there
                for(ARTSPrototypeCharacter* Unit : SelectedUnits)
                {
+                    if(bAggressive == true)
+                    {
+                         Unit->ChangeCharacterState(ECharacterState::Aggressive);
+                         UE_LOG(LogTemp, Warning, TEXT("Attack"));
+                    }
+                    else 
+                    {
+                         Unit->ChangeCharacterState(ECharacterState::Passive);
+                         UE_LOG(LogTemp, Warning, TEXT("Passive"));
+                    }
                     UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
                }
+               // reset to passive
+               bAggressive = false;
 		}
 }
 

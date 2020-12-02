@@ -39,6 +39,10 @@ private:
 
 	ACameraPawn* PlayerPawn;
 
+	bool bAggressive = false;
+
+	void SetAggression();
+
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 

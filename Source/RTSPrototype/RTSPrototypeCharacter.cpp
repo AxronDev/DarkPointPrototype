@@ -6,6 +6,7 @@
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
+#include "Perception/AIPerceptionComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -44,6 +45,8 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
 	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
 
+	Perception = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
+
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -67,6 +70,11 @@ void ARTSPrototypeCharacter::Attack()
 	
 }
 
+void ARTSPrototypeCharacter::ChangeCharacterState(ECharacterState NewState) 
+{
+	CharacterState = NewState;
+}
+
 void ARTSPrototypeCharacter::UpdateToOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) 
 {
 	bHasSpace = false;
@@ -75,6 +83,13 @@ void ARTSPrototypeCharacter::UpdateToOverlap(UPrimitiveComponent* OverlappedComp
 void ARTSPrototypeCharacter::UpdateNotOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) 
 {
 	bHasSpace = true;
+}
+
+float ARTSPrototypeCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) 
+{
+	float DamageDealt = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	Health -= DamageDealt;
+	return DamageDealt;
 }
 
 void ARTSPrototypeCharacter::Tick(float DeltaSeconds)

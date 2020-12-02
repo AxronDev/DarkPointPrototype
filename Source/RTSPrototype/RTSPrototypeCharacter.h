@@ -6,6 +6,13 @@
 #include "GameFramework/Character.h"
 #include "RTSPrototypeCharacter.generated.h"
 
+UENUM()
+enum class ECharacterState : uint8
+{
+	Passive,
+	Aggressive,
+};
+
 UCLASS(Blueprintable)
 class ARTSPrototypeCharacter : public ACharacter
 {
@@ -26,11 +33,13 @@ public:
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
 	/** A decal that projects to the cursor location. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Indicatior, meta = (AllowPrivateAccess = "true"))
 	class UDecalComponent* CursorToWorld;
 	// Collision that checks if the character can spawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* SpawnSpace;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = AI, meta = (AllowPrivateAccess = "true"))
+	class UAIPerceptionComponent* Perception;
 
 	bool bHasSpace = true;
 
@@ -39,7 +48,12 @@ public:
 
 	void Attack();
 
+	void ChangeCharacterState(ECharacterState NewState);
+
 private:
+	ECharacterState CharacterState = ECharacterState::Passive;
+
+
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* TopDownCameraComponent;
@@ -56,6 +70,6 @@ private:
 
 	float Health = 100;
 
-	class UDamageType Damage;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser);
 };
 
