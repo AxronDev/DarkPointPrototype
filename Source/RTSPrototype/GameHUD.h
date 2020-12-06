@@ -17,6 +17,8 @@ private:
 	
 	virtual void DrawHUD();
 
+	TArray<AActor*> SelectionBuffer;
+
 public:
 	bool SelectPressed{false};
 	FVector2D InitMousePos{NULL};

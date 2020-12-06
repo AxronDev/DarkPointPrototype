@@ -45,11 +45,12 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
 	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
 
-	Perception = CreateDefaultSubobject<UAIPerceptionComponent>("Perception");
-
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+	// Initialize attack slots array to false with size of 30
+	AttackSlots.Init(false, 30);
 }
 
 void ARTSPrototypeCharacter::BeginPlay()
@@ -70,9 +71,24 @@ void ARTSPrototypeCharacter::Attack()
 	
 }
 
+void ARTSPrototypeCharacter::SetOwnerUserName(FName UserName) 
+{
+	OwnerUserName = UserName;
+}
+
+FName ARTSPrototypeCharacter::GetOwnerUserName() 
+{
+	return OwnerUserName;
+}
+
 void ARTSPrototypeCharacter::ChangeCharacterState(ECharacterState NewState) 
 {
 	CharacterState = NewState;
+}
+
+ECharacterState ARTSPrototypeCharacter::GetCharacterState() 
+{
+	return CharacterState;
 }
 
 void ARTSPrototypeCharacter::UpdateToOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) 

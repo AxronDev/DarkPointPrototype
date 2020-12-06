@@ -19,6 +19,9 @@ ABuilding::ABuilding()
 	}
 	CursorToWorld->DecalSize = FVector(300.0f, 300.0f, 300.0f);
 	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
+
+	// Initialize attack slots array to false with size of 30
+	AttackSlots.Init(false, 30);
 }
 
 // Called when the game starts or when spawned
@@ -38,5 +41,15 @@ void ABuilding::Tick(float DeltaTime)
 FName ABuilding::GetBuildingType() 
 {
 	return BuildingType;
+}
+
+void ABuilding::SetOwnerUserName(FName UserName) 
+{
+	OwnerUserName = UserName;
+}
+
+FName ABuilding::GetOwnerUserName() 
+{
+	return OwnerUserName;
 }
 

@@ -14,6 +14,12 @@ ARtsPlayerController::ARtsPlayerController()
 {
      bShowMouseCursor = true;
      DefaultMouseCursor = EMouseCursor::Default;
+     UGameplayStatics::SetPlayerControllerID(this, 1);
+}
+
+FName ARtsPlayerController::GetUserName() 
+{
+     return UserName;
 }
 
 void ARtsPlayerController::PlayerTick(float DeltaTime) 
@@ -173,6 +179,7 @@ void ARtsPlayerController::CreateGoldBuilding()
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(GoldBuildingClass);
           if(PlacementBuffer)
           {
+               Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->AddGoldBuilding();
                // Makes Tick call PositionPlacement()
                ChangeState(EPlayerState::Placing);
@@ -192,6 +199,7 @@ void ARtsPlayerController::CreateUnitBuilding()
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(UnitBuildingClass);
           if(PlacementBuffer)
           {
+               Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->AddUnitBuilding();
                // Makes Tick call PositionPlacement()
                ChangeState(EPlayerState::Placing);
@@ -208,6 +216,7 @@ void ARtsPlayerController::CreateUnit()
           PlacementBuffer = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass);
           if(PlacementBuffer)
           {
+               Cast<ARTSPrototypeCharacter>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->MyUnits.Add(PlacementBuffer);
                // Makes Tick call PositionPlacement()
                ChangeState(EPlayerState::Placing);

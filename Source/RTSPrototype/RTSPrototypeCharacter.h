@@ -38,8 +38,6 @@ public:
 	// Collision that checks if the character can spawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* SpawnSpace;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = AI, meta = (AllowPrivateAccess = "true"))
-	class UAIPerceptionComponent* Perception;
 
 	bool bHasSpace = true;
 
@@ -48,11 +46,23 @@ public:
 
 	void Attack();
 
+	void SetOwnerUserName(FName UserName);
+
+	UFUNCTION(BlueprintCallable)
+	FName GetOwnerUserName();
+
 	void ChangeCharacterState(ECharacterState NewState);
+
+	UFUNCTION(BlueprintCallable)
+	ECharacterState GetCharacterState();
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<bool> AttackSlots;
 
 private:
 	ECharacterState CharacterState = ECharacterState::Passive;
 
+	FName OwnerUserName = "";
 
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

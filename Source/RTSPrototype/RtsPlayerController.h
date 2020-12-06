@@ -32,12 +32,17 @@ public:
 	TArray<ARTSPrototypeCharacter*> SelectedUnits;
 	TArray<ABuilding*> SelectedBuildings;
 
+	UFUNCTION(BlueprintCallable)
+	FName GetUserName();
+
 	virtual void PlayerTick(float DeltaTime) override;
 
 private:
 	EPlayerState PlayerState;
 
 	ACameraPawn* PlayerPawn;
+
+	FName UserName = "Axron";
 
 	bool bAggressive = false;
 

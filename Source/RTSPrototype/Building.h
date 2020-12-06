@@ -31,4 +31,15 @@ public:
 	UDecalComponent* CursorToWorld;
 
 	FName GetBuildingType();
+
+	void SetOwnerUserName(FName UserName);
+
+	UFUNCTION(BlueprintCallable)
+	FName GetOwnerUserName();
+
+	TArray<bool> AttackSlots;
+
+private:
+	FName OwnerUserName = "";
+
 };
