@@ -1,6 +1,7 @@
 {
 	"files.exclude": {
 		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/.git": true,
+		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/.vs": true,
 		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/.vscode": true,
 		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/Content": true,
 		"F:/Documents/LearningUnrealEngine/DarkPointPrototype/DerivedDataCache": true,

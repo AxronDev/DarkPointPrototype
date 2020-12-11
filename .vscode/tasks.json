@@ -542,6 +542,276 @@
 			}
 		},
 		{
+			"label": "RTSPrototype IOS Debug Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Debug",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Debug Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Debug",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"RTSPrototype IOS Debug Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Debug Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Debug",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS DebugGame Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"DebugGame",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS DebugGame Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"DebugGame",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"RTSPrototype IOS DebugGame Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS DebugGame Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"DebugGame",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Development Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Development",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Development Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Development",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"RTSPrototype IOS Development Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Development Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Development",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Shipping Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Shipping",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Shipping Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Shipping",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"RTSPrototype IOS Shipping Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Shipping Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Shipping",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Test Build",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Test",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Test Rebuild",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Build.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Test",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"dependsOn": [
+				"RTSPrototype IOS Test Clean"
+			],
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
+			"label": "RTSPrototype IOS Test Clean",
+			"group": "build",
+			"command": "Engine\\Build\\BatchFiles\\Clean.bat",
+			"args": [
+				"RTSPrototype",
+				"IOS",
+				"Test",
+				"F:\\Documents\\LearningUnrealEngine\\DarkPointPrototype\\Prototype.uproject",
+				"-waitmutex"
+			],
+			"problemMatcher": "$msCompile",
+			"type": "shell",
+			"options": {
+				"cwd": "C:\\Program Files\\Epic Games\\UE_4.25"
+			}
+		},
+		{
 			"label": "RTSPrototypeEditor Win64 Debug Build",
 			"group": "build",
 			"command": "Engine\\Build\\BatchFiles\\Build.bat",

@@ -56,7 +56,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	ECharacterState GetCharacterState();
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;
 
 private:
