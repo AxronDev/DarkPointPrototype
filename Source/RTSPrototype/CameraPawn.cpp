@@ -51,11 +51,11 @@ void ACameraPawn::AddUnitBuilding()
 void ACameraPawn::MouseMovement(float DeltaTime) 
 {
 	FVector MousePos{0,0,0};
-	Cast<APlayerController>(GetController())->GetMousePosition(MousePos.X, MousePos.Y);
+	GetWorld()->GetFirstPlayerController()->GetMousePosition(MousePos.X, MousePos.Y);
 
 	int32 ViewSizeX;
 	int32 ViewSizeY;
-	Cast<APlayerController>(GetController())->GetViewportSize(ViewSizeX, ViewSizeY);
+	GetWorld()->GetFirstPlayerController()->GetViewportSize(ViewSizeX, ViewSizeY);
 
 	float LocPercentX = MousePos.X / ViewSizeX;
 	float LocPercentY = MousePos.Y / ViewSizeY;
