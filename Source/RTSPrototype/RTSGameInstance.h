@@ -36,6 +36,9 @@ class RTSPROTOTYPE_API URTSGameInstance : public UGameInstance, public IMenuInte
 	UFUNCTION()
 	void QuitSession();
 
+	UFUNCTION()
+	void SetUsername(const FName& NewUsernameToSet);
+
 private:
 	TSubclassOf<UUserWidget> MenuClass;
 	TSubclassOf<UUserWidget> PauseMenuClass;

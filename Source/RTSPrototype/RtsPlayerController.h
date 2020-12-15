@@ -34,6 +34,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FName GetUserName();
+	void SetUsername(const FName& NewUserName);
 
 	virtual void PlayerTick(float DeltaTime) override;
 
@@ -42,7 +43,7 @@ private:
 
 	ACameraPawn* PlayerPawn;
 
-	FName UserName = "Axron";
+	FName UserName = "";
 
 	bool bAggressive = false;
 

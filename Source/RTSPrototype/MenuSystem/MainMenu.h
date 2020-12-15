@@ -31,6 +31,10 @@ protected:
 	virtual bool Initialize();
 
 private:
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* EnterUserNameButton;
+
 	UPROPERTY(meta = (BindWidget))
 	UButton* HostButton;
 
@@ -56,7 +60,13 @@ private:
 	UVerticalBox* JoinMenu; 
 
 	UPROPERTY(meta = (BindWidget))
-	UEditableTextBox* IPAddressField; 
+	UEditableTextBox* IPAddressField;
+	
+	UPROPERTY(meta = (BindWidget))
+	UEditableTextBox* UserNameEntry;
+
+	UFUNCTION()
+	void SetUsername();
 
 	UFUNCTION()
 	void HostServer();

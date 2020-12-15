@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MenuSystem/MainMenu.h"
 #include "MenuSystem/PauseMenu.h"
+#include "RtsPlayerController.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 URTSGameInstance::URTSGameInstance(const FObjectInitializer& ObjectInitializer) 
@@ -69,7 +70,8 @@ void URTSGameInstance::Host()
 
      UWorld* World = GetWorld(); 
      if(!ensure(World)) return;
-     World->ServerTravel("Game/TopDownCPP/Maps/TopDownExampleMap?listen");
+     Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Starting server travel"));
+     World->ServerTravel("/Game/TopDownCPP/Maps/TopDownExampleMap?listen");
 }
 
 void URTSGameInstance::Join(const FString& Address) 
@@ -97,4 +99,11 @@ void URTSGameInstance::QuitSession()
 {
      PauseMenu->Teardown();
      ReturnToMainMenu();
+}
+
+void URTSGameInstance::SetUsername(const FName& NewUsername) 
+{
+     ARtsPlayerController* PlayerController = Cast<ARtsPlayerController>(GetFirstLocalPlayerController());
+     if(!ensure(PlayerController)) return;
+     PlayerController->SetUsername(NewUsername);
 }

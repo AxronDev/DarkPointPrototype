@@ -22,6 +22,11 @@ FName ARtsPlayerController::GetUserName()
      return UserName;
 }
 
+void ARtsPlayerController::SetUsername(const FName& NewUserName) 
+{
+     UserName = NewUserName;
+}
+
 void ARtsPlayerController::PlayerTick(float DeltaTime) 
 {
      Super::PlayerTick(DeltaTime);

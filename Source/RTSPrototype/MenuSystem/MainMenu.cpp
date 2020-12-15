@@ -13,6 +13,9 @@ bool UMainMenu::Initialize()
      bool Success = Super::Initialize();
      if(!Success) return false;
 
+     if(!ensure(EnterUserNameButton)) return false;
+     EnterUserNameButton->OnClicked.AddDynamic(this, &UMainMenu::SetUsername);
+
      if(!ensure(HostButton)) return false;
      HostButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
 
@@ -29,6 +32,16 @@ bool UMainMenu::Initialize()
      QuitButton->OnClicked.AddDynamic(this, &UMainMenu::Quit);
 
      return true;
+}
+
+void UMainMenu::SetUsername() 
+{
+     if(!ensure(UserNameEntry)) return;
+     if(MenuInterface)
+     {
+          const FName& NewUsername = FName(UserNameEntry->GetText().ToString());
+          MenuInterface->SetUsername(NewUsername);
+     }
 }
 
 void UMainMenu::HostServer() 

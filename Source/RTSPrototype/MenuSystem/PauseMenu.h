@@ -8,6 +8,7 @@
 #include "PauseMenu.generated.h"
 
 class UButton;
+class UEditableTextBox;
 
 /**
  * 
