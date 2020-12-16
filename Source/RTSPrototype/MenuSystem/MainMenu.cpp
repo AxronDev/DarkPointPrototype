@@ -115,15 +115,4 @@ void UMainMenu::Setup()
 void UMainMenu::Teardown() 
 {
      this->RemoveFromViewport();
-
-     UWorld* World = GetWorld();
-     if(!ensure(World)) return;
-
-     APlayerController* PlayerController = World->GetFirstPlayerController();
-     if(!ensure(PlayerController)) return;
-
-     FInputModeGameOnly InputModeData;
-     PlayerController->SetInputMode(InputModeData);
-
-     PlayerController->bShowMouseCursor = false;
 }

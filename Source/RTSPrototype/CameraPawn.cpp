@@ -2,6 +2,7 @@
 
 
 #include "CameraPawn.h"
+#include "RtsPlayerController.h"
 
 // Sets default values
 ACameraPawn::ACameraPawn()
@@ -27,6 +28,10 @@ void ACameraPawn::Tick(float DeltaTime)
 
 	Gold += GoldBuildings * (DeltaTime * GoldRate);
 	Units += UnitBuildings * (DeltaTime * UnitRate);
+
+	//GetWorld()->GetFirstPlayerController()->SetName()
+
+	//AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Hosting"));
 }
 
 // Called to bind functionality to input
@@ -51,11 +56,11 @@ void ACameraPawn::AddUnitBuilding()
 void ACameraPawn::MouseMovement(float DeltaTime) 
 {
 	FVector MousePos{0,0,0};
-	GetWorld()->GetFirstPlayerController()->GetMousePosition(MousePos.X, MousePos.Y);
+	GetWorld()->GetGameInstance()->GetFirstLocalPlayerController()->GetMousePosition(MousePos.X, MousePos.Y);
 
 	int32 ViewSizeX;
 	int32 ViewSizeY;
-	GetWorld()->GetFirstPlayerController()->GetViewportSize(ViewSizeX, ViewSizeY);
+	GetWorld()->GetGameInstance()->GetFirstLocalPlayerController()->GetViewportSize(ViewSizeX, ViewSizeY);
 
 	float LocPercentX = MousePos.X / ViewSizeX;
 	float LocPercentY = MousePos.Y / ViewSizeY;

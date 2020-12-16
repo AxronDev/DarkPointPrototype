@@ -34,6 +34,8 @@ void URTSGameInstance::Init()
 
 void URTSGameInstance::LoadMenu() 
 {
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     Cast<ARtsPlayerController>(PlayerController)->ChangeState(EPlayerState::Menu);
      UE_LOG(LogTemp, Warning, TEXT("LoadMenu Called in Game Instance"));
      Menu = CreateWidget<UMainMenu>(this, MenuClass);
      if (!ensure(Menu))
@@ -49,6 +51,8 @@ void URTSGameInstance::LoadMenu()
 
 void URTSGameInstance::LoadPauseMenu() 
 {
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     Cast<ARtsPlayerController>(PlayerController)->ChangeState(EPlayerState::Menu);
      PauseMenu = CreateWidget<UPauseMenu>(this, PauseMenuClass);
      if (!ensure(PauseMenu)) return;
      
@@ -63,6 +67,12 @@ void URTSGameInstance::Host()
      {
           Menu->Teardown();
      }
+     // Fix input mode
+     FInputModeGameOnly InputModeData;
+     InputModeData.SetConsumeCaptureMouseDown(false);
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     PlayerController->SetInputMode(InputModeData);
+
      UEngine* Engine = GetEngine();
      if (!ensure(Engine)) return;
 
@@ -72,6 +82,7 @@ void URTSGameInstance::Host()
      if(!ensure(World)) return;
      Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Starting server travel"));
      World->ServerTravel("/Game/TopDownCPP/Maps/TopDownExampleMap?listen");
+     Cast<ARtsPlayerController>(PlayerController)->ChangeState(EPlayerState::Default);
 }
 
 void URTSGameInstance::Join(const FString& Address) 
@@ -80,11 +91,16 @@ void URTSGameInstance::Join(const FString& Address)
      {
           Menu->Teardown();
      }
+     // Fix input mode
+     FInputModeGameOnly InputModeData;
+     // InputModeData.SetConsumeCaptureMouseDown(false);
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     PlayerController->SetInputMode(InputModeData);
+
      UEngine* Engine = GetEngine();
      if (!ensure(Engine)) return;
 
      Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, FString::Printf(TEXT("Joining %s"), *Address));
-     APlayerController* PlayerController = GetFirstLocalPlayerController();
      if(!ensure(PlayerController)) 
      {
           Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, FString::Printf(TEXT("Player controller is bad")));
@@ -93,6 +109,7 @@ void URTSGameInstance::Join(const FString& Address)
      Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, FString::Printf(TEXT("Player controller is good")));
 
      PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+     Cast<ARtsPlayerController>(PlayerController)->ChangeState(EPlayerState::Default);
 }
 
 void URTSGameInstance::QuitSession() 

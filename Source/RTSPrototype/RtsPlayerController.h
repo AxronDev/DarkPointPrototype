@@ -18,8 +18,9 @@ class ABuilding;
 UENUM()
 enum class EPlayerState : uint8
 {
-	Default,		// Able to select units, give commands and perform most of what the game requires
-	Placing,		// Only able to move buildings, place and exit placing
+	Menu = 0,
+	Default = 1,		// Able to select units, give commands and perform most of what the game requires
+	Placing = 2,		// Only able to move buildings, place and exit placing
 };
 
 UCLASS()
@@ -37,6 +38,11 @@ public:
 	void SetUsername(const FName& NewUserName);
 
 	virtual void PlayerTick(float DeltaTime) override;
+
+	UPROPERTY(VisibleAnywhere)
+	APawn* ControlledPawn = nullptr;
+
+	void ChangeState(EPlayerState NewState);
 
 private:
 	EPlayerState PlayerState;
@@ -75,8 +81,6 @@ private:
 	void CreateUnit();
 
 	void PositionPlacement();
-
-	void ChangeState(EPlayerState NewState);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABuilding> GoldBuildingClass;

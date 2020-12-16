@@ -31,6 +31,11 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
 {
      Super::PlayerTick(DeltaTime);
 
+     // const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
+     // UE_LOG(LogTemp, Warning, TEXT("%s"), *EnumPtr->GetDisplayNameText((uint8)PlayerState).ToString());
+
+     if(PlayerState == EPlayerState::Menu) return;
+
      if(PlayerState != EPlayerState::Default)
      {
           // Update building location
@@ -48,6 +53,8 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
                }
           }
      }
+
+     ControlledPawn = GetPawn();
 }
 
 void ARtsPlayerController::SetAggression() 
@@ -84,33 +91,49 @@ void ARtsPlayerController::SetupInputComponent()
 void ARtsPlayerController::MoveTo()
 {
      // Trace to see what is under the mouse cursor
-		Hit;
-		GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 
-		if (Hit.bBlockingHit)
-		{
-			// We hit something, cycle through selected units and move there
-               for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+     UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
+
+	Hit;
+	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+
+	if (Hit.bBlockingHit)
+	{
+          UE_LOG(LogTemp, Warning, TEXT("Hit Something"));
+		// We hit something, cycle through selected units and move there
+          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+          {
+               if(bAggressive == true)
                {
-                    if(bAggressive == true)
-                    {
-                         Unit->ChangeCharacterState(ECharacterState::Aggressive);
-                         UE_LOG(LogTemp, Warning, TEXT("Attack"));
-                    }
-                    else 
-                    {
-                         Unit->ChangeCharacterState(ECharacterState::Passive);
-                         UE_LOG(LogTemp, Warning, TEXT("Passive"));
-                    }
+                    Unit->ChangeCharacterState(ECharacterState::Aggressive);
+                    UE_LOG(LogTemp, Warning, TEXT("Attack"));
+               }
+               else 
+               {
+                    Unit->ChangeCharacterState(ECharacterState::Passive);
+                    UE_LOG(LogTemp, Warning, TEXT("Passive"));
+               }
+               AController* UnitController = Unit->GetController();
+               if(UnitController != nullptr)
+               {
+                    UE_LOG(LogTemp, Warning, TEXT("Attained unit controller"));
                     UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
                }
-               // reset to passive
-               bAggressive = false;
-		}
+               else
+               {
+                    UE_LOG(LogTemp, Warning, TEXT("Failed to get unit controller"));
+               }
+               
+          }
+          // reset to passive
+          bAggressive = false;
+	}
 }
 
 void ARtsPlayerController::LeftMousePress() 
 {
+     UE_LOG(LogTemp, Warning, TEXT("Left Mouse Pressed"));
+     if(PlayerState == EPlayerState::Menu) return;
      if(PlayerState == EPlayerState::Default)
      {
           SelectionInitiate();
@@ -143,12 +166,14 @@ void ARtsPlayerController::LeftMousePress()
 
 void ARtsPlayerController::LeftMouseRelease() 
 {
+     if(PlayerState == EPlayerState::Menu) return;
      SelectionTerminate();
      IsPressLeft = false;
 }
 
 void ARtsPlayerController::RightMousePress() 
 {
+     if(PlayerState == EPlayerState::Menu) return;
      if(PlayerState == EPlayerState::Default)
      {
           MoveTo();
@@ -179,6 +204,8 @@ void ARtsPlayerController::SelectionTerminate()
 
 void ARtsPlayerController::CreateGoldBuilding() 
 {
+     if(PlayerState == EPlayerState::Menu) return;
+
      if(PlayerPawn->Gold >= PlayerPawn->GoldPrice)
      {
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(GoldBuildingClass);
@@ -199,6 +226,8 @@ void ARtsPlayerController::CreateGoldBuilding()
 
 void ARtsPlayerController::CreateUnitBuilding() 
 {
+     if(PlayerState == EPlayerState::Menu) return;
+
      if(PlayerPawn->Gold >= PlayerPawn->UnitPrice)
      {
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(UnitBuildingClass);
@@ -218,14 +247,16 @@ void ARtsPlayerController::CreateUnitBuilding()
 
 void ARtsPlayerController::CreateUnit() 
 {
-          PlacementBuffer = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass);
-          if(PlacementBuffer)
-          {
-               Cast<ARTSPrototypeCharacter>(PlacementBuffer)->SetOwnerUserName(UserName);
-               PlayerPawn->MyUnits.Add(PlacementBuffer);
-               // Makes Tick call PositionPlacement()
-               ChangeState(EPlayerState::Placing);
-          }
+     if(PlayerState == EPlayerState::Menu) return;
+
+     PlacementBuffer = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass);
+     if(PlacementBuffer)
+     {
+          Cast<ARTSPrototypeCharacter>(PlacementBuffer)->SetOwnerUserName(UserName);
+          PlayerPawn->MyUnits.Add(PlacementBuffer);
+          // Makes Tick call PositionPlacement()
+          ChangeState(EPlayerState::Placing);
+     }
 }
 
 void ARtsPlayerController::PositionPlacement() 
