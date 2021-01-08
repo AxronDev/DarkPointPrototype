@@ -5,9 +5,12 @@
 #include "RTSPrototypeCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "CameraPawn.h"
+#include "UnitAIController.h"
 #include "Components/BoxComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "NavigationSystem.h"
 #include "RTSPrototype/GameHUD.h"
+#include "AIController.h"
 #include "Building.h"
 
 ARtsPlayerController::ARtsPlayerController()
@@ -64,6 +67,17 @@ void ARtsPlayerController::SetAggression()
 
 void ARtsPlayerController::BeginPlay()
 {
+     if(HasAuthority())
+     {
+          UserName = "Axron";
+     }
+
+     else
+     {
+          UserName = "UserJoshua";
+     }
+     
+
      HUD = Cast<AGameHUD>(GetHUD());
 
      BuildingSpawnParams.Owner = Cast<AActor>(GetPawn());
@@ -90,34 +104,33 @@ void ARtsPlayerController::SetupInputComponent()
 
 void ARtsPlayerController::MoveTo()
 {
-     // Trace to see what is under the mouse cursor
-
      UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
-
-	Hit;
-	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
 
 	if (Hit.bBlockingHit)
 	{
-          UE_LOG(LogTemp, Warning, TEXT("Hit Something"));
+          UE_LOG(LogTemp, Warning, TEXT("Hit Something at X: %f Y: %f Z: %f"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z);
 		// We hit something, cycle through selected units and move there
           for(ARTSPrototypeCharacter* Unit : SelectedUnits)
           {
                if(bAggressive == true)
                {
                     Unit->ChangeCharacterState(ECharacterState::Aggressive);
-                    UE_LOG(LogTemp, Warning, TEXT("Attack"));
+                    // UE_LOG(LogTemp, Warning, TEXT("Attack"));
                }
                else 
                {
                     Unit->ChangeCharacterState(ECharacterState::Passive);
-                    UE_LOG(LogTemp, Warning, TEXT("Passive"));
+                    // UE_LOG(LogTemp, Warning, TEXT("Passive"));
                }
-               AController* UnitController = Unit->GetController();
+               AUnitAIController* UnitController = Cast<AUnitAIController>(Unit->GetController());
                if(UnitController != nullptr)
                {
-                    UE_LOG(LogTemp, Warning, TEXT("Attained unit controller"));
-                    UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
+                    FString UnitName = Cast<AAIController>(UnitController)->GetDebugName(UnitController);
+                    UE_LOG(LogTemp, Warning, TEXT("Attained unit controller %s"), *UnitName);
+                    
+                    UnitController->MoveUnit(Hit.ImpactPoint);
+                    // UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.ImpactPoint);
                }
                else
                {
@@ -125,9 +138,63 @@ void ARtsPlayerController::MoveTo()
                }
                
           }
-          // reset to passive
-          bAggressive = false;
 	}
+
+     // reset to passive
+     bAggressive = false;
+}
+
+void ARtsPlayerController::Server_MoveTo_Implementation()
+{// Trace to see what is under the mouse cursor
+
+     UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
+	GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
+
+	if (Hit.bBlockingHit)
+	{
+          UE_LOG(LogTemp, Warning, TEXT("Hit Something at X: %f Y: %f"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y);
+		// We hit something, cycle through selected units and move there
+          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+          {
+               if(bAggressive == true)
+               {
+                    Unit->ChangeCharacterState(ECharacterState::Aggressive);
+                    // UE_LOG(LogTemp, Warning, TEXT("Attack"));
+               }
+               else 
+               {
+                    Unit->ChangeCharacterState(ECharacterState::Passive);
+                    // UE_LOG(LogTemp, Warning, TEXT("Passive"));
+               }
+               AAIController* UnitController = Cast<AAIController>(Unit->GetController());
+               if(UnitController != nullptr)
+               {
+                    FString UnitName = UnitController->GetDebugName(UnitController);
+                    UE_LOG(LogTemp, Warning, TEXT("Attained unit controller %s"), *UnitName);
+                    if(HasAuthority())
+                    {
+                         UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
+                         // UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.ImpactPoint);
+                         UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
+                    }
+               }
+               else
+               {
+                    UE_LOG(LogTemp, Warning, TEXT("Failed to get unit controller"));
+               }
+               
+          }
+	}/* 
+     if(UnitChar && UnitController)
+     {
+          UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
+          UAIBlueprintHelperLibrary::SimpleMoveToLocation(UnitChar->GetController(), HitResult.ImpactPoint);
+     } */
+}
+
+bool ARtsPlayerController::Server_MoveTo_Validate()
+{
+     return true;
 }
 
 void ARtsPlayerController::LeftMousePress() 
@@ -261,6 +328,7 @@ void ARtsPlayerController::CreateUnit()
 
 void ARtsPlayerController::PositionPlacement() 
 {
+     // Placement Trace Channel
      GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
      if(Cast<ARTSPrototypeCharacter>(PlacementBuffer))
      {

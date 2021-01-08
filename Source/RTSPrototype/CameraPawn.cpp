@@ -75,7 +75,7 @@ void ACameraPawn::MouseMovement(float DeltaTime)
 	if(LocPercentX >= .95  || LocPercentX <= .05 || LocPercentY >= .95 || LocPercentY <= .05)
 	{
 		MoveDirection = MousePos.GetSafeNormal(.001);
-		AddActorLocalOffset(DistanceToMove * FVector(-MoveDirection.Y, MoveDirection.X, MoveDirection.Z), true);
+		//AddActorLocalOffset(DistanceToMove * FVector(-MoveDirection.Y, MoveDirection.X, MoveDirection.Z), true);
 	}
 }
 

@@ -108,7 +108,7 @@ void URTSGameInstance::Join(const FString& Address)
      }
      Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, FString::Printf(TEXT("Player controller is good")));
 
-     PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+     PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute, true);
      Cast<ARtsPlayerController>(PlayerController)->ChangeState(EPlayerState::Default);
 }
 

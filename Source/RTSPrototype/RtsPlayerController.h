@@ -10,6 +10,7 @@ class ARTSPrototypeCharacter;
 class AGameHUD;
 class ACameraPawn;
 class ABuilding;
+class AAIController;
 
 /**
  * 
@@ -61,6 +62,9 @@ private:
 	AGameHUD* HUD{nullptr};
 
 	void MoveTo();
+
+	UFUNCTION( Server, Reliable, WithValidation )
+	void Server_MoveTo();
 
 	FHitResult Hit;
 
