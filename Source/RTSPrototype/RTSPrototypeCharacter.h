@@ -59,10 +59,13 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;
 
+protected:
+
+	UPROPERTY(EditAnywhere)
+	FName OwnerUserName = "";
+
 private:
 	ECharacterState CharacterState = ECharacterState::Passive;
-
-	FName OwnerUserName = "";
 
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))

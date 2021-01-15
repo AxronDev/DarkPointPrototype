@@ -31,6 +31,9 @@ class RTSPROTOTYPE_API ARtsPlayerController : public APlayerController
 
 public:
 	ARtsPlayerController();
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
 	TArray<ARTSPrototypeCharacter*> SelectedUnits;
 	TArray<ABuilding*> SelectedBuildings;
 
@@ -43,13 +46,17 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	APawn* ControlledPawn = nullptr;
 
-	void ChangeState(EPlayerState NewState);
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ChangePlayerState(EPlayerState NewState);
+	
+	UPROPERTY(replicated)
+	EPlayerState RTSPlayerState;
 
 private:
-	EPlayerState PlayerState;
 
 	ACameraPawn* PlayerPawn;
 
+	UPROPERTY(VisibleAnywhere)
 	FName UserName = "";
 
 	bool bAggressive = false;
@@ -63,7 +70,7 @@ private:
 
 	void MoveTo();
 
-	UFUNCTION( Server, Reliable, WithValidation )
+	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveTo();
 
 	FHitResult Hit;
@@ -77,12 +84,17 @@ private:
 	void SelectionInitiate();
 	void SelectionTerminate();
 
+	UPROPERTY(replicated)
 	AActor* PlacementBuffer;
 
 	void CreateGoldBuilding();
 	void CreateUnitBuilding();
 
-	void CreateUnit();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_CreateUnit();
+
+	UFUNCTION(Client, Reliable)
+	void PrepareUnit(AActor* NewUnit);
 
 	void PositionPlacement();
 

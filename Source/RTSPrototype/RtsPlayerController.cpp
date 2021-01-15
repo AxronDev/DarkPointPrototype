@@ -7,17 +7,31 @@
 #include "CameraPawn.h"
 #include "UnitAIController.h"
 #include "Components/BoxComponent.h"
+#include "Engine/Engine.h"
+#include "Net/UnrealNetwork.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "NavigationSystem.h"
 #include "RTSPrototype/GameHUD.h"
 #include "AIController.h"
 #include "Building.h"
+#define NETMODE_WORLD (((GEngine == nullptr) || (GetWorld() == nullptr)) ? TEXT("") \
+: (GEngine->GetNetMode(GetWorld()) == NM_Client) ? TEXT("[Client] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_ListenServer) ? TEXT("[ListenServer] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_DedicatedServer) ? TEXT("[DedicatedServer] ") \
+: TEXT("[Standalone] "))
 
 ARtsPlayerController::ARtsPlayerController()
 {
+     bReplicates = true;
      bShowMouseCursor = true;
      DefaultMouseCursor = EMouseCursor::Default;
      UGameplayStatics::SetPlayerControllerID(this, 1);
+}
+
+void ARtsPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const {
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(ARtsPlayerController, RTSPlayerState);
+     DOREPLIFETIME(ARtsPlayerController, PlacementBuffer);
 }
 
 FName ARtsPlayerController::GetUserName() 
@@ -34,27 +48,39 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
 {
      Super::PlayerTick(DeltaTime);
 
-     // const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
-     // UE_LOG(LogTemp, Warning, TEXT("%s"), *EnumPtr->GetDisplayNameText((uint8)PlayerState).ToString());
+     ForceNetUpdate();
+     UE_LOG(LogTemp, Warning, TEXT("Forced Net Update Tick"));
 
-     if(PlayerState == EPlayerState::Menu) return;
-
-     if(PlayerState != EPlayerState::Default)
+     // Return Enum Value
+     const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
+     FString EnumName = EnumPtr->GetDisplayNameText((uint8)RTSPlayerState).ToString();
+     if(!HasAuthority())
      {
+          UE_LOG(LogTemp, Warning, TEXT("%s on %s"), *EnumName, NETMODE_WORLD);
+     }
+     // GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, *EnumPtr->GetDisplayNameText((uint8)PlayerState).ToString());
+
+     if(RTSPlayerState == EPlayerState::Menu) return;
+
+     if(RTSPlayerState != EPlayerState::Default)
+     {
+          FString UnitName = GetDebugName(PlacementBuffer);
+          // GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("Placing"));
+          // UE_LOG(LogTemp, Warning, TEXT("Placing"));
           // Update building location
           PositionPlacement();
      }
      if(IsPressLeft == true)
      {
-          if(PlayerPawn->Units >= 1)
-          {
-               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true)
-               {
-                    PlayerPawn->Units -= 1;
-                    ChangeState(EPlayerState::Default);
-                    CreateUnit();
-               }
-          }
+          //if(PlayerPawn->Units >= 1)
+          //{
+               //if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true)
+               //{
+                    // PlayerPawn->Units -= 1;
+                    Server_ChangePlayerState(EPlayerState::Default);
+                    // Server_CreateUnit();
+               //}
+          //}
      }
 
      ControlledPawn = GetPawn();
@@ -82,7 +108,7 @@ void ARtsPlayerController::BeginPlay()
 
      BuildingSpawnParams.Owner = Cast<AActor>(GetPawn());
 
-     PlayerState = EPlayerState::Default;
+     RTSPlayerState = EPlayerState::Default;
 
      PlayerPawn = Cast<ACameraPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 }
@@ -98,13 +124,13 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("BuildGoldProduction", IE_Released, this, &ARtsPlayerController::CreateGoldBuilding);
      InputComponent->BindAction("BuildUnitProduction", IE_Released, this, &ARtsPlayerController::CreateUnitBuilding);
 
-     InputComponent->BindAction("PlaceUnit", IE_Released, this, &ARtsPlayerController::CreateUnit);
+     InputComponent->BindAction("PlaceUnit", IE_Released, this, &ARtsPlayerController::Server_CreateUnit);
      InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::SetAggression);
 }
 
 void ARtsPlayerController::MoveTo()
 {
-     UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
+     /* UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
 	GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
 
 	if (Hit.bBlockingHit)
@@ -138,7 +164,9 @@ void ARtsPlayerController::MoveTo()
                }
                
           }
-	}
+	} */
+     
+     Server_MoveTo();
 
      // reset to passive
      bAggressive = false;
@@ -200,8 +228,8 @@ bool ARtsPlayerController::Server_MoveTo_Validate()
 void ARtsPlayerController::LeftMousePress() 
 {
      UE_LOG(LogTemp, Warning, TEXT("Left Mouse Pressed"));
-     if(PlayerState == EPlayerState::Menu) return;
-     if(PlayerState == EPlayerState::Default)
+     if(RTSPlayerState == EPlayerState::Menu) return;
+     if(RTSPlayerState == EPlayerState::Default)
      {
           SelectionInitiate();
      }
@@ -224,7 +252,7 @@ void ARtsPlayerController::LeftMousePress()
                     if(BuildingBuffer->GetBuildingType() == FName("Unit Building"))
                          PlayerPawn->Gold -= PlayerPawn->UnitPrice;
                }
-               ChangeState(EPlayerState::Default);
+               Server_ChangePlayerState(EPlayerState::Default);
           }
           
      }
@@ -233,22 +261,22 @@ void ARtsPlayerController::LeftMousePress()
 
 void ARtsPlayerController::LeftMouseRelease() 
 {
-     if(PlayerState == EPlayerState::Menu) return;
+     if(RTSPlayerState == EPlayerState::Menu) return;
      SelectionTerminate();
      IsPressLeft = false;
 }
 
 void ARtsPlayerController::RightMousePress() 
 {
-     if(PlayerState == EPlayerState::Menu) return;
-     if(PlayerState == EPlayerState::Default)
+     if(RTSPlayerState == EPlayerState::Menu) return;
+     if(RTSPlayerState == EPlayerState::Default)
      {
           MoveTo();
      }
      else
      {
           PlacementBuffer->Destroy();
-          ChangeState(EPlayerState::Default);
+          Server_ChangePlayerState(EPlayerState::Default);
           
      }
 }
@@ -271,7 +299,7 @@ void ARtsPlayerController::SelectionTerminate()
 
 void ARtsPlayerController::CreateGoldBuilding() 
 {
-     if(PlayerState == EPlayerState::Menu) return;
+     if(RTSPlayerState == EPlayerState::Menu) return;
 
      if(PlayerPawn->Gold >= PlayerPawn->GoldPrice)
      {
@@ -281,19 +309,19 @@ void ARtsPlayerController::CreateGoldBuilding()
                Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->AddGoldBuilding();
                // Makes Tick call PositionPlacement()
-               ChangeState(EPlayerState::Placing);
+               Server_ChangePlayerState(EPlayerState::Placing);
           }
      }
      else
      {
-          ChangeState(EPlayerState::Default);
+          Server_ChangePlayerState(EPlayerState::Default);
      }
           
 }
 
 void ARtsPlayerController::CreateUnitBuilding() 
 {
-     if(PlayerState == EPlayerState::Menu) return;
+     if(RTSPlayerState == EPlayerState::Menu) return;
 
      if(PlayerPawn->Gold >= PlayerPawn->UnitPrice)
      {
@@ -303,46 +331,96 @@ void ARtsPlayerController::CreateUnitBuilding()
                Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->AddUnitBuilding();
                // Makes Tick call PositionPlacement()
-               ChangeState(EPlayerState::Placing);
+               Server_ChangePlayerState(EPlayerState::Placing);
           }
      }
      else
      {
-          ChangeState(EPlayerState::Default);
+          Server_ChangePlayerState(EPlayerState::Default);
      }
 }
 
-void ARtsPlayerController::CreateUnit() 
+void ARtsPlayerController::PrepareUnit_Implementation(AActor* NewUnit) 
 {
-     if(PlayerState == EPlayerState::Menu) return;
-
-     PlacementBuffer = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass);
-     if(PlacementBuffer)
+     PlacementBuffer = NewUnit;
+     if(NewUnit != nullptr && Cast<ARTSPrototypeCharacter>(NewUnit) && PlacementBuffer == NewUnit)
      {
-          Cast<ARTSPrototypeCharacter>(PlacementBuffer)->SetOwnerUserName(UserName);
-          PlayerPawn->MyUnits.Add(PlacementBuffer);
+          UE_LOG(LogTemp, Warning, TEXT("New Unit is good %s"), NETMODE_WORLD);
+          
           // Makes Tick call PositionPlacement()
-          ChangeState(EPlayerState::Placing);
+          Server_ChangePlayerState(EPlayerState::Placing);
+          const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
+          GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, *EnumPtr->GetDisplayNameText((uint8)RTSPlayerState).ToString());
      }
+     else
+     {
+          UE_LOG(LogTemp, Warning, TEXT("New Unit is bad"));
+     }
+     GEngine->AddOnScreenDebugMessage(0, 2, FColor::Red, TEXT("PrepareUnit Called "));
+     
+}
+
+// Called when U is pressed
+void ARtsPlayerController::Server_CreateUnit_Implementation() 
+{
+     if(RTSPlayerState == EPlayerState::Menu) return;
+
+     AActor* NewUnit = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass, FVector(-3028.0f, -276.0f, 277.56f), FRotator(0.0f));
+     if(NewUnit)
+     {
+          Cast<ARTSPrototypeCharacter>(NewUnit)->SetOwnerUserName(UserName);
+          NewUnit->SetReplicates(true);
+          PlayerPawn->MyUnits.Add(NewUnit);
+          FString UnitName = GetDebugName(NewUnit);
+          UE_LOG(LogTemp, Warning, TEXT("Unit Buffer in CreateUnit: %s   %s"), *UnitName, NETMODE_WORLD);
+          PrepareUnit_Implementation(NewUnit);
+     }
+}
+
+bool ARtsPlayerController::Server_CreateUnit_Validate()
+{
+     return true;
 }
 
 void ARtsPlayerController::PositionPlacement() 
 {
      // Placement Trace Channel
      GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
-     if(Cast<ARTSPrototypeCharacter>(PlacementBuffer))
+     if(Cast<ARTSPrototypeCharacter>(PlacementBuffer) != nullptr)
      {
+          FString UnitName = GetDebugName(PlacementBuffer);
+          UE_LOG(LogTemp, Warning, TEXT("Unit Buffer in PositionPlacement: %s"), *UnitName);
           Hit.Location.Z += 100.f;
      }
+     else
+     {
+          //UE_LOG(LogTemp, Warning, TEXT("Cast Failed in Position Placement"));
+     }
+     
 
 	if (Hit.bBlockingHit)
 	{
           PlacementBuffer->SetActorLocation(Hit.Location);
      }
+     else
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Nothing Blocking Hit"));
+     }
+     
 
 }
 
-void ARtsPlayerController::ChangeState(EPlayerState NewState) 
+void ARtsPlayerController::Server_ChangePlayerState_Implementation(EPlayerState NewState) 
 {
-     PlayerState = NewState;
+     RTSPlayerState = NewState;
+     const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("EPlayerState"), true);
+     FString Message = FString("Changed State to: ").Append(*EnumPtr->GetDisplayNameText((uint8)RTSPlayerState).ToString());
+     GEngine->AddOnScreenDebugMessage(2, 2, FColor::Red, Message);
+     FString EnumName = EnumPtr->GetDisplayNameText((uint8)RTSPlayerState).ToString();
+     UE_LOG(LogTemp, Warning, TEXT("Changed State to: %s    %s"), *EnumName, NETMODE_WORLD);
+}
+
+bool ARtsPlayerController::Server_ChangePlayerState_Validate(EPlayerState NewState)
+{
+     return true;
 }
