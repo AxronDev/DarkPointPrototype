@@ -9,6 +9,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Net/UnrealNetwork.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
@@ -64,6 +65,45 @@ void ARTSPrototypeCharacter::BeginPlay()
 	SpawnSpace->OnComponentEndOverlap.AddDynamic(this, &ARTSPrototypeCharacter::UpdateNotOverlap);
 }
 
+void ARTSPrototypeCharacter::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+
+	if (CursorToWorld != nullptr)
+	{
+		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+		{
+			if (UWorld* World = GetWorld())
+			{
+				FHitResult HitResult;
+				FCollisionQueryParams Params(NAME_None, FCollisionQueryParams::GetUnknownStatId());
+				FVector StartLocation = TopDownCameraComponent->GetComponentLocation();
+				FVector EndLocation = TopDownCameraComponent->GetComponentRotation().Vector() * 2000.0f;
+				Params.AddIgnoredActor(this);
+				World->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, Params);
+				FQuat SurfaceRotation = HitResult.ImpactNormal.ToOrientationRotator().Quaternion();
+				CursorToWorld->SetWorldLocationAndRotation(HitResult.Location, SurfaceRotation);
+			}
+		}
+		else if (APlayerController* PC = Cast<APlayerController>(GetController()))
+		{
+			
+			FHitResult TraceHitResult;
+			PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
+			FVector CursorFV = TraceHitResult.ImpactNormal;
+			FRotator CursorR = CursorFV.Rotation();
+			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
+			CursorToWorld->SetWorldRotation(CursorR);
+		}
+	}	
+}
+
+void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
+{
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(ARTSPrototypeCharacter, OwnerUserName);
+}
+
 float ARTSPrototypeCharacter::GetHealth() 
 {
 	return Health;
@@ -71,7 +111,7 @@ float ARTSPrototypeCharacter::GetHealth()
 
 void ARTSPrototypeCharacter::Attack() 
 {
-	
+	// Sad and empty
 }
 
 void ARTSPrototypeCharacter::SetOwnerUserName(FName UserName) 
@@ -109,37 +149,4 @@ float ARTSPrototypeCharacter::TakeDamage(float DamageAmount, struct FDamageEvent
 	float DamageDealt = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	Health -= DamageDealt;
 	return DamageDealt;
-}
-
-void ARTSPrototypeCharacter::Tick(float DeltaSeconds)
-{
-    Super::Tick(DeltaSeconds);
-
-	if (CursorToWorld != nullptr)
-	{
-		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-		{
-			if (UWorld* World = GetWorld())
-			{
-				FHitResult HitResult;
-				FCollisionQueryParams Params(NAME_None, FCollisionQueryParams::GetUnknownStatId());
-				FVector StartLocation = TopDownCameraComponent->GetComponentLocation();
-				FVector EndLocation = TopDownCameraComponent->GetComponentRotation().Vector() * 2000.0f;
-				Params.AddIgnoredActor(this);
-				World->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, Params);
-				FQuat SurfaceRotation = HitResult.ImpactNormal.ToOrientationRotator().Quaternion();
-				CursorToWorld->SetWorldLocationAndRotation(HitResult.Location, SurfaceRotation);
-			}
-		}
-		else if (APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			
-			FHitResult TraceHitResult;
-			PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-			FVector CursorFV = TraceHitResult.ImpactNormal;
-			FRotator CursorR = CursorFV.Rotation();
-			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
-			CursorToWorld->SetWorldRotation(CursorR);
-		}
-	}
 }

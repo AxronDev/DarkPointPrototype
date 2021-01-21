@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MenuSystem/MainMenu.h"
+#include "Kismet/GameplayStatics.h"
 #include "MenuSystem/PauseMenu.h"
 #include "RtsPlayerController.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -59,6 +60,30 @@ void URTSGameInstance::LoadPauseMenu()
      PauseMenu->Setup();
 
      PauseMenu->SetMenuInterface(this);
+}
+
+void URTSGameInstance::NewPlayerController(ARtsPlayerController* NewPlayerController) 
+{
+     /* if(NewPlayerController)
+     {
+          // check if in right level (not menu)
+          if(UGameplayStatics::GetCurrentLevelName(GetWorld(), true) != "MainMenu")
+          {
+               // Increments num of player controllers
+               NumPlayers++;
+               
+               // set username based on order
+               if(NumPlayers == 1)
+               {
+                    NewPlayerController->SetUsername(FName("Bungalow Bill")); // Me server
+               }
+               if(NumPlayers == 2)
+               {
+                    NewPlayerController->SetUsername(FName("Hill Billy Willy")); // Josh client
+               }
+          }
+          // UE_LOG(LogTemp, Warning, TEXT("%s"), *UGameplayStatics::GetCurrentLevelName(GetWorld(), true))
+     } */
 }
 
 void URTSGameInstance::Host() 
@@ -122,5 +147,5 @@ void URTSGameInstance::SetUsername(const FName& NewUsername)
 {
      ARtsPlayerController* PlayerController = Cast<ARtsPlayerController>(GetFirstLocalPlayerController());
      if(!ensure(PlayerController)) return;
-     PlayerController->SetUsername(NewUsername);
+     PlayerController->Server_SetUsername(NewUsername);
 }

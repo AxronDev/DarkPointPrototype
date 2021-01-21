@@ -28,6 +28,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
 	UDecalComponent* CursorToWorld;
 
 	FName GetBuildingType();
@@ -40,6 +42,7 @@ public:
 	TArray<bool> AttackSlots;
 
 private:
+	UPROPERTY(VisibleAnywhere, replicated)
 	FName OwnerUserName = "";
 
 };

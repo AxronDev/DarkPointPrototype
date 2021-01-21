@@ -29,17 +29,22 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void AddGoldBuilding();
-	void AddUnitBuilding();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_AddGoldBuilding();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_AddUnitBuilding();
 
+	UPROPERTY(replicated)
 	TArray<AActor*> MyUnits;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, replicated)
 	float Gold = 1000;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, replicated)
 	float Units;
 
 	UPROPERTY(EditAnywhere)
@@ -53,7 +58,9 @@ private:
 
 	FVector MoveDirection;
 
+	UPROPERTY(replicated)
 	int32 GoldBuildings = 1;
+	UPROPERTY(replicated)
 	int32 UnitBuildings = 0;
 
 	float GoldRate = 3.f;

@@ -7,6 +7,7 @@
 
 ARTSPrototypeGameMode::ARTSPrototypeGameMode()
 {
+	bUseSeamlessTravel = true;
 	// use our custom PlayerController class
 	PlayerControllerClass = ARTSPrototypePlayerController::StaticClass();
 

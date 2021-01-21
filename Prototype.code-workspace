@@ -13,7 +13,10 @@
 		"typescript.tsc.autoDetect": "off",
 		"files.associations": {
 			"queue": "cpp",
-			"stack": "cpp"
+			"stack": "cpp",
+			"bitset": "cpp",
+			"mutex": "cpp",
+			"shared_mutex": "cpp"
 		}
 	},
 	"extensions": {

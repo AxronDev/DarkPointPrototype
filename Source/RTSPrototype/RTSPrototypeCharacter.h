@@ -26,6 +26,8 @@ public:
 
 	virtual void BeginPlay();
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	/** Returns CameraBoom subobject **/
@@ -61,7 +63,7 @@ public:
 
 protected:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, replicated)
 	FName OwnerUserName = "";
 
 private:
