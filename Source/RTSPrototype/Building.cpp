@@ -3,6 +3,7 @@
 
 #include "Building.h"
 #include "Components/DecalComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ABuilding::ABuilding()
@@ -36,6 +37,12 @@ void ABuilding::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ABuilding::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
+{
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(ABuilding, OwnerUserName);
 }
 
 FName ABuilding::GetBuildingType() 

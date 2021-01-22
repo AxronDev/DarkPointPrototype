@@ -6,6 +6,7 @@
 #include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -54,6 +55,12 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 
 	// Initialize attack slots array to false with size of 30
 	AttackSlots.Init(false, 30);
+}
+
+void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
+{
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(ARTSPrototypeCharacter, OwnerUserName);
 }
 
 void ARTSPrototypeCharacter::BeginPlay()

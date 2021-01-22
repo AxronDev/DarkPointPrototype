@@ -34,12 +34,16 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
+	UPROPERTY(replicated)
 	TArray<ARTSPrototypeCharacter*> SelectedUnits;
+	UPROPERTY(replicated)
 	TArray<ABuilding*> SelectedBuildings;
 
 	UFUNCTION(BlueprintCallable)
 	FName GetUserName();
-	void SetUsername(const FName& NewUserName);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetUsername(const FName& NewUserName);
 
 	virtual void PlayerTick(float DeltaTime) override;
 
@@ -52,13 +56,18 @@ public:
 	UPROPERTY(replicated)
 	EPlayerState RTSPlayerState;
 
-private:
+protected:
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetPlayerPawn();
 
+private:
+	UPROPERTY(replicated)
 	ACameraPawn* PlayerPawn;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, replicated)
 	FName UserName = "";
 
+	UPROPERTY(replicated)
 	bool bAggressive = false;
 
 	void SetAggression();
@@ -71,9 +80,7 @@ private:
 	void MoveTo();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveTo();
-
-	FHitResult Hit;
+	void Server_MoveTo(FHitResult Hit, const TArray<ARTSPrototypeCharacter*>& Units);
 
 	void LeftMousePress();
 	void LeftMouseRelease();
@@ -87,8 +94,10 @@ private:
 	UPROPERTY(replicated)
 	AActor* PlacementBuffer;
 
-	void CreateGoldBuilding();
-	void CreateUnitBuilding();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_CreateGoldBuilding();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_CreateUnitBuilding();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_CreateUnit();
@@ -96,7 +105,8 @@ private:
 	UFUNCTION(Client, Reliable)
 	void PrepareUnit(AActor* NewUnit);
 
-	void PositionPlacement();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_PositionPlacement(FHitResult HitRes, AActor* UnitToPlace);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABuilding> GoldBuildingClass;

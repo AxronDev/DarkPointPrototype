@@ -3,6 +3,7 @@
 
 #include "CameraPawn.h"
 #include "RtsPlayerController.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ACameraPawn::ACameraPawn()
@@ -34,6 +35,16 @@ void ACameraPawn::Tick(float DeltaTime)
 	//AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Hosting"));
 }
 
+void ACameraPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
+{
+     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+     DOREPLIFETIME(ACameraPawn, Gold);
+	DOREPLIFETIME(ACameraPawn, Units);
+	DOREPLIFETIME(ACameraPawn, GoldBuildings);
+	DOREPLIFETIME(ACameraPawn, UnitBuildings);
+	DOREPLIFETIME(ACameraPawn, MyUnits);
+}
+
 // Called to bind functionality to input
 void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -41,16 +52,27 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
      InputComponent->BindAxis("Zoom", this, &ACameraPawn::Zoom);
 }
 
-void ACameraPawn::AddGoldBuilding() 
+void ACameraPawn::Server_AddGoldBuilding_Implementation()
 {
 	GoldBuildings++;
 	// UE_LOG(LogTemp, Warning, TEXT("Gold Buildings: %i"), GoldBuildings);
 }
 
-void ACameraPawn::AddUnitBuilding() 
+bool ACameraPawn::Server_AddGoldBuilding_Validate()
+{
+    return true;
+}
+
+void ACameraPawn::Server_AddUnitBuilding_Implementation() 
 {
 	UnitBuildings++;
-	// UE_LOG(LogTemp, Warning, TEXT("Unit Buildings: %i"), UnitBuildings);
+    FString DebugName = GetDebugName(GetController());
+    UE_LOG(LogTemp, Warning, TEXT("Unit Buildings: %i Owning PlayerController: %s"), UnitBuildings, *DebugName);
+}
+
+bool ACameraPawn::Server_AddUnitBuilding_Validate()
+{
+    return true;
 }
 
 void ACameraPawn::MouseMovement(float DeltaTime) 

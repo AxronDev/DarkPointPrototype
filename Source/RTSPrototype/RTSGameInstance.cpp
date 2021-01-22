@@ -122,5 +122,5 @@ void URTSGameInstance::SetUsername(const FName& NewUsername)
 {
      ARtsPlayerController* PlayerController = Cast<ARtsPlayerController>(GetFirstLocalPlayerController());
      if(!ensure(PlayerController)) return;
-     PlayerController->SetUsername(NewUsername);
+     // PlayerController->SetUsername(NewUsername);
 }
