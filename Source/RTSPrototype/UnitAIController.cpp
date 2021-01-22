@@ -55,6 +55,15 @@ void AUnitAIController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & O
      DOREPLIFETIME(AUnitAIController, Char);
 }
 
+void AUnitAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult & Result) 
+{
+     Super::OnMoveCompleted(RequestID, Result);
+     /* const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("E"), true);
+     FString EnumName = EnumPtr->GetDisplayNameText((uint8)RTSPlayerState).ToString(); */
+
+     UE_LOG(LogTemp, Warning, TEXT("PathFollowingResult: %s"), *Result.ToString());
+}
+
 void AUnitAIController::Tick(float DeltaSeconds)
 {
      Super::Tick(DeltaSeconds);

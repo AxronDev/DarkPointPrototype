@@ -32,6 +32,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAISense> SightSenseClass;
+
+	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult & Result) override;
 	
 protected:
 	virtual void BeginPlay() override;

@@ -254,11 +254,9 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
                {
                     FString UnitName = UnitController->GetDebugName(UnitController);
                     UE_LOG(LogTemp, Warning, TEXT("Attained unit controller %s"), *UnitName);
-                    if(HasAuthority())
-                    {
-                         UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
-                         UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
-                    }
+
+                    UAIBlueprintHelperLibrary::SimpleMoveToLocation(UnitController, Hit.ImpactPoint);
+                    UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
                }
                else
                {
