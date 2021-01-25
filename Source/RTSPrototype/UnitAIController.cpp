@@ -5,26 +5,31 @@
 #include "Net/UnrealNetwork.h"
 #include "RTSPrototypeCharacter.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Perception/AIPerceptionTypes.h"
+#include "Navigation/PathFollowingComponent.h"
+#include "TimerManager.h"
+#include "Engine/EngineTypes.h"
 #include "Perception/AISenseConfig_Sight.h"
 
 AUnitAIController::AUnitAIController() 
 {
      bReplicates = true;
 
-     /* AIPercep = CreateDefaultSubobject<UAIPerceptionComponent>("SightPerception");
+     AIPercep = CreateDefaultSubobject<UAIPerceptionComponent>("SightPerception");
      SightSenseConfig = CreateDefaultSubobject<UAISenseConfig_Sight>("Sight Config");
 
      // Setup SightSenseConfig
-     SightSenseConfig->SightRadius = 1800.f;
-     SightSenseConfig->LoseSightRadius = 3000.f;
+     SightSenseConfig->SightRadius = 800.f;
+     SightSenseConfig->LoseSightRadius = 1000.f;
      SightSenseConfig->PeripheralVisionAngleDegrees = 360.f;
      SightSenseConfig->DetectionByAffiliation.bDetectEnemies = true;
      SightSenseConfig->DetectionByAffiliation.bDetectNeutrals = true;
      SightSenseConfig->DetectionByAffiliation.bDetectFriendlies = true;
+     SightSenseConfig->SetMaxAge(MaxAge);
 
      AIPercep->ConfigureSense(*SightSenseConfig);
-     AIPercep->SetDominantSense(SightSenseConfig->GetSenseImplementation()); */
-     // AIPercep->OnPercepetionUpdated.AddDynamic(this, AUnitAIController::)
+     AIPercep->SetDominantSense(SightSenseConfig->GetSenseImplementation());
+     AIPercep->OnPerceptionUpdated.AddDynamic(this, &AUnitAIController::SortEnemyObjects);
 }
 
 void AUnitAIController::BeginPlay() 
@@ -32,14 +37,104 @@ void AUnitAIController::BeginPlay()
      Super::BeginPlay();
      PrimaryActorTick.bCanEverTick = true;
 
-     // Server_GetAICharacter();
+     AIPercep->SetSenseEnabled(SightSenseClass, true);
+}
 
-     //AIPercep->SetSenseEnabled(SightSenseClass, false);
+bool AUnitAIController::WithinRange() 
+{
+     // UE_LOG(LogTemp, Display, TEXT("Target is %f cm away"), Target->GetDistanceTo(Char));
+     if(Target->GetDistanceTo(Char) <= Char->AttackDist && Target->GetDistanceTo(Char) != -2.f)
+     {
+          return true;
+     }
+     else
+     {
+          return false;
+     }
+}
+
+void AUnitAIController::CanAttack() 
+{
+    Char->bCanAttack = true;
+}
+
+void AUnitAIController::AssignTarget() 
+{
+     if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE)
+     {
+          UE_LOG(LogTemp, Display, TEXT("Target null or not in Enemy array"));
+          Target = nullptr;
+          for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
+          {
+               for(uint8 Slot = 0; Slot < Char->AttackSlots.Num(); Slot++)
+               {
+                    if(EnemyUnits[UnitIndex]->AttackSlots[Slot] == false)
+                    {
+                         if(Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex]))
+                         {
+                              EnemyUnits[UnitIndex]->AttackSlots[Slot] = true;
+                              Target = Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex]);
+                              UE_LOG(LogTemp, Warning, TEXT("Cast Succeded AssignTarget"));
+                              Slot = Char->AttackSlots.Num();
+                              UnitIndex = EnemyUnits.Num();
+                         }
+                         else
+                         {
+                              UE_LOG(LogTemp, Warning, TEXT("Cast Failed AssignTarget"));
+                         }
+                    }
+                    /* FString UnitName = GetDebugName(units);
+                    FString Auth;    
+                    UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName); */
+               }
+          }
+     }
+}
+
+void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors) 
+{
+     // UE_LOG(LogTemp, Warning, TEXT("Perception Updated"));
+     for(AActor* Unit : Actors)
+     {
+          // Check if Unit
+          if(Cast<ARTSPrototypeCharacter>(Unit))
+          {
+               // Check if enemy
+               if(Cast<ARTSPrototypeCharacter>(Unit)->GetOwnerUserName() != Char->GetOwnerUserName())
+               {
+                    FActorPerceptionBlueprintInfo Info;
+                    AIPercep->GetActorsPerception(Unit, Info);
+                    FAIStimulus Stim = Info.LastSensedStimuli[0];
+                    // Check if sight is lost
+                    if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge)
+                    {
+                         int Index = EnemyUnits.Remove(Cast<ARTSPrototypeCharacter>(Unit));
+                    }
+                    else
+                    {
+                         FString UnitName = GetDebugName(Unit);   
+                         UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName);
+                         EnemyUnits.Add(Cast<ARTSPrototypeCharacter>(Unit));
+                    }
+               }
+          }
+     }
+
+     AssignTarget();
 }
 
 void AUnitAIController::Server_GetAICharacter_Implementation() 
 {
      Char = GetPawn<ARTSPrototypeCharacter>();
+     if(Char)
+     {
+          // UE_LOG(LogTemp, Warning, TEXT("Got Char in Server_GetAICharacter"));
+     }
+     else
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Failed to get Char in Server_GetAICharacter"));
+     }
+     
 }
 
 bool AUnitAIController::Server_GetAICharacter_Validate() 
@@ -49,17 +144,44 @@ bool AUnitAIController::Server_GetAICharacter_Validate()
 
 void AUnitAIController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
 {
-
      Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-     //DOREPLIFETIME(AUnitAIController, Char);
+     DOREPLIFETIME(AUnitAIController, Char);
 }
 
-/* void AUnitAIController::Tick(float DeltaSeconds)
+void AUnitAIController::Tick(float DeltaSeconds)
 {
      Super::Tick(DeltaSeconds);
 
-     if(Char->GetCharacterState() == ECharacterState::Aggressive)
+     if(Char)
      {
-          // AIPercep->SetSenseEnabled(SightSenseClass, true);
+          if(Char->GetCharacterState() == ECharacterState::Aggressive)
+          {
+               // AIPercep->SetSenseEnabled(SightSenseClass, true);
+               if(Target)
+               {
+                    MoveToActor(Target, Char->DistToTarget, true, true, true);
+                    
+                    if(WithinRange())
+                    {
+                         UE_LOG(LogTemp, Display, TEXT("Within range"));
+                         if(Char->bCanAttack == true)
+                         {
+                              UE_LOG(LogTemp, Display, TEXT("Can attack"));
+                              Char->Attack(Cast<AActor>(Target));
+                              Char->bCanAttack = false;
+                              GetWorldTimerManager().SetTimer(Timer, this, &AUnitAIController::CanAttack, Char->AttackSpeed);
+                         }
+                    }
+               }
+          }
+          else if(Char->GetCharacterState() == ECharacterState::Passive)
+          {
+               // AIPercep->SetSenseEnabled(SightSenseClass, false);
+          }
+          
      }
-} */
+     else
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Char is null in AIController Tick"));
+     }
+}

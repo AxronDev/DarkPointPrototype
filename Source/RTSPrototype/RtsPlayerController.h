@@ -70,7 +70,8 @@ private:
 	UPROPERTY(replicated)
 	bool bAggressive = false;
 
-	void SetAggression();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetAggression();
 
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

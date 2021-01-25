@@ -1,10 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "RTSPrototypeCharacter.generated.h"
+
+class AUnitAIController;
+class UDamageType;
 
 UENUM()
 enum class ECharacterState : uint8
@@ -46,14 +48,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetHealth();
 
-	void Attack();
+	void Attack(AActor* Target);
 
 	void SetOwnerUserName(FName UserName);
 
 	UFUNCTION(BlueprintCallable)
 	FName GetOwnerUserName();
 
-	void ChangeCharacterState(ECharacterState NewState);
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ChangeCharacterState(ECharacterState NewState);
 
 	UFUNCTION(BlueprintCallable)
 	ECharacterState GetCharacterState();
@@ -61,13 +64,39 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;
 
+    UPROPERTY(EditDefaultsOnly)
+    float DistToTarget = 25.f; // come out to 78 cm away when stopped
+
+    UPROPERTY(EditDefaultsOnly)
+    float AttackDist = 120.f;
+
+    UPROPERTY(EditDefaultsOnly)
+    float AttackSpeed = 2.5f;
+
+    UPROPERTY(EditDefaultsOnly)
+    float AttackDamage = 5.f;
+
+    UPROPERTY(EditAnywhere)
+    TSubclassOf<UDamageType> DamageTypeClass;
+
+    bool bCanAttack = true;
+
+    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
+
 protected:
 
 	UPROPERTY(EditAnywhere, replicated)
 	FName OwnerUserName = "";
 
 private:
+	UPROPERTY(replicated)
 	ECharacterState CharacterState = ECharacterState::Passive;
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_GetUnitController();
+
+	UPROPERTY(replicated)
+	AUnitAIController* UnitController;
 
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -83,8 +112,7 @@ private:
 	UFUNCTION()
 	void UpdateNotOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UPROPERTY(replicated)
 	float Health = 100;
-
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser);
 };
 

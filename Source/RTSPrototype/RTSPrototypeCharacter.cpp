@@ -8,7 +8,9 @@
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "UnitAIController.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
@@ -61,12 +63,20 @@ void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
      Super::GetLifetimeReplicatedProps(OutLifetimeProps);
      DOREPLIFETIME(ARTSPrototypeCharacter, OwnerUserName);
+	DOREPLIFETIME(ARTSPrototypeCharacter, UnitController);
+     DOREPLIFETIME(ARTSPrototypeCharacter, CharacterState);
+	DOREPLIFETIME(ARTSPrototypeCharacter, Health);
 }
 
 void ARTSPrototypeCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	Server_GetUnitController();
 	CursorToWorld->SetVisibility(false);
+	if(UnitController)
+	{
+		UnitController->Server_GetAICharacter();
+	}
 	SpawnSpace->OnComponentBeginOverlap.AddDynamic(this, &ARTSPrototypeCharacter::UpdateToOverlap);
 	SpawnSpace->OnComponentEndOverlap.AddDynamic(this, &ARTSPrototypeCharacter::UpdateNotOverlap);
 }
@@ -76,9 +86,9 @@ float ARTSPrototypeCharacter::GetHealth()
 	return Health;
 }
 
-void ARTSPrototypeCharacter::Attack() 
+void ARTSPrototypeCharacter::Attack(AActor* Target) 
 {
-	
+	UGameplayStatics::ApplyDamage(Target, AttackDamage, Cast<AController>(UnitController), this, DamageTypeClass);
 }
 
 void ARTSPrototypeCharacter::SetOwnerUserName(FName UserName) 
@@ -91,14 +101,36 @@ FName ARTSPrototypeCharacter::GetOwnerUserName()
 	return OwnerUserName;
 }
 
-void ARTSPrototypeCharacter::ChangeCharacterState(ECharacterState NewState) 
+void ARTSPrototypeCharacter::Server_ChangeCharacterState_Implementation(ECharacterState NewState) 
 {
 	CharacterState = NewState;
+}
+
+bool ARTSPrototypeCharacter::Server_ChangeCharacterState_Validate(ECharacterState NewState) 
+{
+	return true;
 }
 
 ECharacterState ARTSPrototypeCharacter::GetCharacterState() 
 {
 	return CharacterState;
+}
+
+void ARTSPrototypeCharacter::Server_GetUnitController_Implementation() 
+{
+	if(Cast<AUnitAIController>(GetController()))
+	{
+		UnitController = Cast<AUnitAIController>(GetController());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Get UnitAIController Failed in RTSPrototypeCharacter"));
+	}
+}
+
+bool ARTSPrototypeCharacter::Server_GetUnitController_Validate()
+{
+	return true;
 }
 
 void ARTSPrototypeCharacter::UpdateToOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) 

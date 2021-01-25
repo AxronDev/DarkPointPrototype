@@ -9,7 +9,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
-#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h" 
 #include "NavigationSystem.h"
 #include "RTSPrototype/GameHUD.h"
 #include "AIController.h"
@@ -120,9 +120,14 @@ bool ARtsPlayerController::Server_SetPlayerPawn_Validate()
 }
 
 
-void ARtsPlayerController::SetAggression() 
+void ARtsPlayerController::Server_SetAggression_Implementation() 
 {
      bAggressive = !bAggressive;
+}
+
+bool ARtsPlayerController::Server_SetAggression_Validate() 
+{
+     return true;
 }
 
 void ARtsPlayerController::BeginPlay()
@@ -168,7 +173,7 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("BuildUnitProduction", IE_Released, this, &ARtsPlayerController::Server_CreateUnitBuilding);
 
      InputComponent->BindAction("PlaceUnit", IE_Released, this, &ARtsPlayerController::Server_CreateUnit);
-     InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::SetAggression);
+     InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::Server_SetAggression);
 }
 
 void ARtsPlayerController::MoveTo()
@@ -213,9 +218,6 @@ void ARtsPlayerController::MoveTo()
     GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
      
      Server_MoveTo(Hit, SelectedUnits);
-
-     // reset to passive
-     bAggressive = false;
 }
 
 void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TArray<ARTSPrototypeCharacter*>& Units)
@@ -231,14 +233,15 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
           {
                if(bAggressive == true)
                {
-                    Unit->ChangeCharacterState(ECharacterState::Aggressive);
+                    Unit->Server_ChangeCharacterState(ECharacterState::Aggressive);
                     UE_LOG(LogTemp, Warning, TEXT("Attack"));
                }
                else 
                {
-                    Unit->ChangeCharacterState(ECharacterState::Passive);
+                    Unit->Server_ChangeCharacterState(ECharacterState::Passive);
                     UE_LOG(LogTemp, Warning, TEXT("Passive"));
                }
+               
                AAIController* UnitController = Cast<AAIController>(Unit->GetController());
                if(UnitController != nullptr)
                {
@@ -253,8 +256,7 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
                else
                {
                     UE_LOG(LogTemp, Warning, TEXT("Failed to get unit controller"));
-               }
-               
+               }            
           }
 	}/* 
      if(UnitChar && UnitController)
@@ -262,6 +264,9 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
           UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
           UAIBlueprintHelperLibrary::SimpleMoveToLocation(UnitChar->GetController(), HitResult.ImpactPoint);
      } */
+
+     // reset to passive
+     bAggressive = false;
 }
 
 bool ARtsPlayerController::Server_MoveTo_Validate(FHitResult Hit, const TArray<ARTSPrototypeCharacter*>& Units)
