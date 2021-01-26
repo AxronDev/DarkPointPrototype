@@ -41,6 +41,9 @@ public:
 
 	TArray<bool> AttackSlots;
 
+	UPROPERTY(replicated)
+	bool bHasBeenPositioned = false;
+
 private:
 	UPROPERTY(replicated)
 	FName OwnerUserName = "";

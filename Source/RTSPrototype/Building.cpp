@@ -43,6 +43,7 @@ void ABuilding::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifeti
 {
      Super::GetLifetimeReplicatedProps(OutLifetimeProps);
      DOREPLIFETIME(ABuilding, OwnerUserName);
+	DOREPLIFETIME(ABuilding, bHasBeenPositioned);
 }
 
 FName ABuilding::GetBuildingType() 

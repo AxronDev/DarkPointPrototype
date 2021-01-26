@@ -89,16 +89,54 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      {
           if(PlayerPawn->Units >= 1)
           {
-               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true)
+               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true && bCanPosition == true)
                {
+                    bCanPosition = false;
+                    GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
                     PlayerPawn->Units -= 1;
                     Server_ChangePlayerState(EPlayerState::Default);
-                    Server_CreateUnit();
+                    if(PlacementBuffer->GetClass() == MeleeClass)
+                    {
+                         Server_CreateUnit(MeleeClass);
+                    }
+                    else if(PlacementBuffer->GetClass() == RangedClass)
+                    {
+                         Server_CreateUnit(RangedClass);
+                    }
+                    else if(PlacementBuffer->GetClass() == TankClass)
+                    {
+                         Server_CreateUnit(TankClass);
+                    }
+                    else if(PlacementBuffer->GetClass() == SpeedClass)
+                    {
+                         Server_CreateUnit(SpeedClass);
+                    }
+
+                    /* switch(PlacementBuffer->GetClass())
+                    {
+                         case MeleeClass :
+                              Server_CreateUnit(MeleeClass);
+                              break;
+                         case RangedClass :
+                              Server_CreateUnit(RangedClass);
+                              break;
+                         case TankClass :
+                              Server_CreateUnit(TankClass);
+                              break;
+                         case SpeedClass :
+                              Server_CreateUnit(SpeedClass);
+                              break;
+                    } */
                }
           }
      }
 
      ControlledPawn = GetPawn();
+}
+
+void ARtsPlayerController::CanPosition() 
+{
+     bCanPosition = true;
 }
 
 void ARtsPlayerController::Server_SetPlayerPawn_Implementation() 
@@ -172,7 +210,11 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("BuildGoldProduction", IE_Released, this, &ARtsPlayerController::Server_CreateGoldBuilding);
      InputComponent->BindAction("BuildUnitProduction", IE_Released, this, &ARtsPlayerController::Server_CreateUnitBuilding);
 
-     InputComponent->BindAction("PlaceUnit", IE_Released, this, &ARtsPlayerController::Server_CreateUnit);
+     InputComponent->BindAction("UnitModifier", IE_Released, this, &ARtsPlayerController::UnitModifierButtons);
+     InputComponent->BindAction("A", IE_Released, this, &ARtsPlayerController::APress);
+     InputComponent->BindAction("S", IE_Released, this, &ARtsPlayerController::SPress);
+     InputComponent->BindAction("D", IE_Released, this, &ARtsPlayerController::DPress);
+     InputComponent->BindAction("F", IE_Released, this, &ARtsPlayerController::FPress);
      InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::Server_SetAggression);
 }
 
@@ -349,6 +391,63 @@ void ARtsPlayerController::SelectionTerminate()
      HUD->SelectPressed = false;
 }
 
+void ARtsPlayerController::UnitModifierButtons() 
+{
+     bUnitButtons = true;
+}
+
+void ARtsPlayerController::APress() 
+{
+     if(bUnitButtons == true)
+     {
+          if(RTSPlayerState == EPlayerState::Placing)
+          {
+               PlacementBuffer->Destroy();
+          }
+          bUnitButtons = false;
+          Server_CreateUnit(MeleeClass);
+     }
+}
+
+void ARtsPlayerController::SPress() 
+{
+     if(bUnitButtons == true)
+     {
+          if(RTSPlayerState == EPlayerState::Placing)
+          {
+               PlacementBuffer->Destroy();
+          }
+          bUnitButtons = false;
+          Server_CreateUnit(RangedClass);
+     }
+}
+
+void ARtsPlayerController::DPress() 
+{
+     if(bUnitButtons == true)
+     {
+          if(RTSPlayerState == EPlayerState::Placing)
+          {
+               PlacementBuffer->Destroy();
+          }
+          bUnitButtons = false;
+          Server_CreateUnit(TankClass);
+     }
+}
+
+void ARtsPlayerController::FPress() 
+{
+     if(bUnitButtons == true)
+     {
+          if(RTSPlayerState == EPlayerState::Placing)
+          {
+               PlacementBuffer->Destroy();
+          }
+          bUnitButtons = false;
+          Server_CreateUnit(SpeedClass);
+     }
+}
+
 void ARtsPlayerController::Server_CreateGoldBuilding_Implementation() 
 {
      if(RTSPlayerState == EPlayerState::Menu) return;
@@ -427,7 +526,7 @@ void ARtsPlayerController::PrepareUnit_Implementation(AActor* NewUnit)
 }
 
 // Called when U is pressed
-void ARtsPlayerController::Server_CreateUnit_Implementation() 
+void ARtsPlayerController::Server_CreateUnit_Implementation(TSubclassOf<ARTSPrototypeCharacter> UnitClass) 
 {
      if(RTSPlayerState == EPlayerState::Menu) return;
 
@@ -443,7 +542,7 @@ void ARtsPlayerController::Server_CreateUnit_Implementation()
      }
 }
 
-bool ARtsPlayerController::Server_CreateUnit_Validate()
+bool ARtsPlayerController::Server_CreateUnit_Validate(TSubclassOf<ARTSPrototypeCharacter> UnitClass)
 {
      return true;
 }
@@ -467,16 +566,18 @@ void ARtsPlayerController::Server_PositionPlacement_Implementation(FHitResult Hi
           FString UnitName = GetDebugName(UnitToPlace);
           // UE_LOG(LogTemp, Warning, TEXT("Unit Buffer in PositionPlacement: %s  %s"), *UnitName, NETMODE_WORLD);
           HitRes.Location.Z += 100.f;
+          Cast<ARTSPrototypeCharacter>(UnitToPlace)->bHasBeenPositioned = true;
      }
      else
      {
           // UE_LOG(LogTemp, Warning, TEXT("Cast Failed in Position Placement"));
+          Cast<ABuilding>(UnitToPlace)->bHasBeenPositioned = true;
      }
      
 
 	if (HitRes.bBlockingHit)
 	{
-          UnitToPlace->SetActorLocation(HitRes.Location);
+          UnitToPlace->SetActorLocation(HitRes.Location, false, nullptr, ETeleportType::TeleportPhysics);
      }
      else
      {

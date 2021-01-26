@@ -35,6 +35,7 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 640.f, 0.f);
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
+	// GetCharacterMovement()->MaxWalkSpeed = MovementSpeed;
 
 	// Create Box Collision to check if the character can spawn
 	SpawnSpace = CreateDefaultSubobject<UBoxComponent>("SpawnSpace");
@@ -66,6 +67,7 @@ void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ARTSPrototypeCharacter, UnitController);
      DOREPLIFETIME(ARTSPrototypeCharacter, CharacterState);
 	DOREPLIFETIME(ARTSPrototypeCharacter, Health);
+	DOREPLIFETIME(ARTSPrototypeCharacter, bHasBeenPositioned); 
 }
 
 void ARTSPrototypeCharacter::BeginPlay()

@@ -65,7 +65,7 @@ public:
 	TArray<bool> AttackSlots;
 
     UPROPERTY(EditDefaultsOnly)
-    float DistToTarget = 25.f; // come out to 78 cm away when stopped
+    float DistToTarget = 25.f; // add 78 cm to desired value
 
     UPROPERTY(EditDefaultsOnly)
     float AttackDist = 120.f;
@@ -76,10 +76,16 @@ public:
     UPROPERTY(EditDefaultsOnly)
     float AttackDamage = 5.f;
 
+    /* UPROPERTY(EditDefaultsOnly)
+    float MovementSpeed = 200.f; */
+
     UPROPERTY(EditAnywhere)
     TSubclassOf<UDamageType> DamageTypeClass;
 
     bool bCanAttack = true;
+
+	UPROPERTY(replicated)
+	bool bHasBeenPositioned = false;
 
     virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
 
@@ -87,6 +93,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, replicated)
 	FName OwnerUserName = "";
+
+	UPROPERTY(EditDefaultsOnly, replicated)
+	float Health = MaxHealth;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MaxHealth = 100;
 
 private:
 	UPROPERTY(replicated)
@@ -111,8 +123,5 @@ private:
 
 	UFUNCTION()
 	void UpdateNotOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UPROPERTY(replicated)
-	float Health = 100;
 };
 

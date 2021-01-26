@@ -104,6 +104,8 @@ void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors)
                {
                     FActorPerceptionBlueprintInfo Info;
                     AIPercep->GetActorsPerception(Unit, Info);
+                    if(Info.LastSensedStimuli.Num() == 0)
+                    break;
                     FAIStimulus Stim = Info.LastSensedStimuli[0];
                     // Check if sight is lost
                     if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge)

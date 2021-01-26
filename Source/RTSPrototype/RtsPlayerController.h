@@ -56,6 +56,9 @@ public:
 	UPROPERTY(replicated)
 	EPlayerState RTSPlayerState;
 
+	UPROPERTY(replicated)
+	bool bCanPosition = true;
+
 protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetPlayerPawn();
@@ -66,6 +69,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, replicated)
 	FName UserName = "";
+
+	FTimerHandle Timer;
+
+	void CanPosition();
 
 	UPROPERTY(replicated)
 	bool bAggressive = false;
@@ -101,7 +108,7 @@ private:
 	void Server_CreateUnitBuilding();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_CreateUnit();
+	void Server_CreateUnit(TSubclassOf<ARTSPrototypeCharacter> UnitClass);
 
 	UFUNCTION(Client, Reliable)
 	void PrepareUnit(AActor* NewUnit);
@@ -114,8 +121,24 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABuilding> UnitBuildingClass;
 
+	void UnitModifierButtons();
+	void APress();
+	void SPress();
+	void DPress();
+	void FPress();
+
+	bool bUnitButtons = false;
+
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<ARTSPrototypeCharacter> UnitClass;
+	TSubclassOf<ARTSPrototypeCharacter> DefaultUnitClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ARTSPrototypeCharacter> MeleeClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ARTSPrototypeCharacter> RangedClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ARTSPrototypeCharacter> TankClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ARTSPrototypeCharacter> SpeedClass;
 
 	FActorSpawnParameters BuildingSpawnParams;
 
