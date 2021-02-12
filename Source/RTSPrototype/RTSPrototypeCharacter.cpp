@@ -8,6 +8,7 @@
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Perception/AIPerceptionComponent.h"
+#include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UnitAIController.h"
@@ -16,6 +17,11 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Engine/World.h"
+#define NETMODE_WORLD (((GEngine == nullptr) || (GetWorld() == nullptr)) ? TEXT("") \
+: (GEngine->GetNetMode(GetWorld()) == NM_Client) ? TEXT("[Client] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_ListenServer) ? TEXT("[ListenServer] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_DedicatedServer) ? TEXT("[DedicatedServer] ") \
+: TEXT("[Standalone] "))
 
 ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 {
@@ -40,6 +46,8 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	// Create Box Collision to check if the character can spawn
 	SpawnSpace = CreateDefaultSubobject<UBoxComponent>("SpawnSpace");
 	SpawnSpace->SetupAttachment(RootComponent);
+	// Also acts to set pawn visibility to true when overlapping FogOfWarView sphere
+	SpawnSpace->SetCollisionResponseToChannel(ECC_GameTraceChannel3, ECR_Overlap);
 
 	// Create a decal in the world to show the cursor's location
 	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
@@ -51,6 +59,12 @@ ARTSPrototypeCharacter::ARTSPrototypeCharacter()
 	}
 	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
 	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
+/* 
+	// Create Fog of War sphere
+     FogOfWarView = CreateDefaultSubobject<USphereComponent>("FogOfWarView");
+	FogOfWarView->SetupAttachment(RootComponent);
+     FogOfWarView->SetSphereRadius(923.f, true);
+	FogOfWarView->SetCollisionObjectType(ECC_GameTraceChannel3); // Fog of War channel */
 
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
@@ -67,7 +81,7 @@ void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ARTSPrototypeCharacter, UnitController);
      DOREPLIFETIME(ARTSPrototypeCharacter, CharacterState);
 	DOREPLIFETIME(ARTSPrototypeCharacter, Health);
-	DOREPLIFETIME(ARTSPrototypeCharacter, bHasBeenPositioned); 
+	DOREPLIFETIME(ARTSPrototypeCharacter, bHasBeenPositioned);
 }
 
 void ARTSPrototypeCharacter::BeginPlay()
@@ -149,7 +163,19 @@ float ARTSPrototypeCharacter::TakeDamage(float DamageAmount, struct FDamageEvent
 {
 	float DamageDealt = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	Health -= DamageDealt;
+	if(Health <= 0)
+	{
+		DamageDealt = 0;
+		Death();
+	}
 	return DamageDealt;
+}
+
+void ARTSPrototypeCharacter::Death() 
+{
+	Server_ChangeCharacterState(ECharacterState::Dead);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // need to be called on server
+	// UE_LOG(LogTemp, Warning, TEXT("Set collision disabled on %s"), NETMODE_WORLD);
 }
 
 void ARTSPrototypeCharacter::Tick(float DeltaSeconds)

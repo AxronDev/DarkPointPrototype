@@ -37,6 +37,7 @@ void ARtsPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> 
      DOREPLIFETIME(ARtsPlayerController, SelectedBuildings);
      DOREPLIFETIME(ARtsPlayerController, PlayerPawn);
      DOREPLIFETIME(ARtsPlayerController, bAggressive);
+     DOREPLIFETIME(ARtsPlayerController, bUnitButtons);
 }
 
 FName ARtsPlayerController::GetUserName() 
@@ -87,13 +88,13 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      }
      if(IsPressLeft == true)
      {
-          if(PlayerPawn->Units >= 1)
+          if(PlayerPawn->Units >= Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost)
           {
                if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true && bCanPosition == true)
                {
                     bCanPosition = false;
                     GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
-                    PlayerPawn->Units -= 1;
+                    Server_BuyUnit(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost);
                     Server_ChangePlayerState(EPlayerState::Default);
                     if(PlacementBuffer->GetClass() == MeleeClass)
                     {
@@ -160,7 +161,10 @@ bool ARtsPlayerController::Server_SetPlayerPawn_Validate()
 
 void ARtsPlayerController::Server_SetAggression_Implementation() 
 {
-     bAggressive = !bAggressive;
+     if(bUnitButtons == false)
+     {
+          bAggressive = !bAggressive;
+     }
 }
 
 bool ARtsPlayerController::Server_SetAggression_Validate() 
@@ -369,7 +373,7 @@ void ARtsPlayerController::RightMousePress()
      }
      else
      {
-          PlacementBuffer->Destroy();
+          Server_DestroyUnit();
           Server_ChangePlayerState(EPlayerState::Default);
           
      }
@@ -391,6 +395,26 @@ void ARtsPlayerController::SelectionTerminate()
      HUD->SelectPressed = false;
 }
 
+void ARtsPlayerController::Server_DestroyUnit_Implementation() 
+{
+     PlacementBuffer->Destroy();
+}
+
+bool ARtsPlayerController::Server_DestroyUnit_Validate()
+{
+     return true;
+}
+
+void ARtsPlayerController::Server_BuyUnit_Implementation(uint8 UnitCost) 
+{
+     PlayerPawn->Units -= UnitCost;
+}
+
+bool ARtsPlayerController::Server_BuyUnit_Validate(uint8 UnitCost)
+{
+     return true;
+}
+
 void ARtsPlayerController::UnitModifierButtons() 
 {
      bUnitButtons = true;
@@ -402,7 +426,7 @@ void ARtsPlayerController::APress()
      {
           if(RTSPlayerState == EPlayerState::Placing)
           {
-               PlacementBuffer->Destroy();
+               Server_DestroyUnit();
           }
           bUnitButtons = false;
           Server_CreateUnit(MeleeClass);
@@ -415,7 +439,7 @@ void ARtsPlayerController::SPress()
      {
           if(RTSPlayerState == EPlayerState::Placing)
           {
-               PlacementBuffer->Destroy();
+               Server_DestroyUnit();
           }
           bUnitButtons = false;
           Server_CreateUnit(RangedClass);
@@ -428,7 +452,7 @@ void ARtsPlayerController::DPress()
      {
           if(RTSPlayerState == EPlayerState::Placing)
           {
-               PlacementBuffer->Destroy();
+               Server_DestroyUnit();
           }
           bUnitButtons = false;
           Server_CreateUnit(TankClass);
@@ -441,7 +465,7 @@ void ARtsPlayerController::FPress()
      {
           if(RTSPlayerState == EPlayerState::Placing)
           {
-               PlacementBuffer->Destroy();
+               Server_DestroyUnit();
           }
           bUnitButtons = false;
           Server_CreateUnit(SpeedClass);
@@ -570,14 +594,25 @@ void ARtsPlayerController::Server_PositionPlacement_Implementation(FHitResult Hi
      }
      else
      {
-          // UE_LOG(LogTemp, Warning, TEXT("Cast Failed in Position Placement"));
-          Cast<ABuilding>(UnitToPlace)->bHasBeenPositioned = true;
+          if(UnitToPlace != nullptr)
+          {
+               // UE_LOG(LogTemp, Warning, TEXT("Cast Failed in Position Placement"));
+               Cast<ABuilding>(UnitToPlace)->bHasBeenPositioned = true;
+          }
      }
      
 
 	if (HitRes.bBlockingHit)
 	{
-          UnitToPlace->SetActorLocation(HitRes.Location, false, nullptr, ETeleportType::TeleportPhysics);
+          if(Cast<ABuilding>(UnitToPlace))
+          {
+               HitRes.Location.X = 100*(round(HitRes.Location.X * .01f));
+               HitRes.Location.Y = 100*(round(HitRes.Location.Y * .01f));
+          }
+          if(UnitToPlace != nullptr)
+          {
+               UnitToPlace->SetActorLocation(HitRes.Location, false, nullptr, ETeleportType::TeleportPhysics);
+          }
      }
      else
      {

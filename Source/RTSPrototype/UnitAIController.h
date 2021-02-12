@@ -40,6 +40,7 @@ public:
     TSubclassOf<UAISense> NoneSenseClass;
 
     TArray<ARTSPrototypeCharacter*> EnemyUnits;
+    // TArray<AActor*>& Actors;
     
     ARTSPrototypeCharacter* Target;
     

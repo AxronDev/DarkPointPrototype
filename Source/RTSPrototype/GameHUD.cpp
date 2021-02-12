@@ -27,14 +27,13 @@ void AGameHUD::DrawHUD()
           // Start Getting selected units
           GetOwningPlayerController()->GetMousePosition(CurrentMousePos.X, CurrentMousePos.Y);
           DrawRect(FLinearColor(0,0,1, .15f), InitMousePos.X, InitMousePos.Y, CurrentMousePos.X - InitMousePos.X, CurrentMousePos.Y - InitMousePos.Y);
-          GetActorsInSelectionRectangle(InitMousePos, CurrentMousePos, SelectionBuffer, false);/* 
-          GetActorsInSelectionRectangle(InitMousePos, CurrentMousePos, SelectionBuffer, false); */
+          GetActorsInSelectionRectangle(InitMousePos, CurrentMousePos, SelectionBuffer, false);
           for(AActor* Unit : SelectionBuffer)
           {
                if(Cast<ARTSPrototypeCharacter>(Unit))
                {
                     ARTSPrototypeCharacter* Character = Cast<ARTSPrototypeCharacter>(Unit);
-                    if(Character->GetOwnerUserName() == PlayerController->GetUserName())
+                    if(Character->GetOwnerUserName() == PlayerController->GetUserName() &&  Character->GetCharacterState() != ECharacterState::Dead)
                     {
                          PlayerController->SelectedUnits.Add(Character);
                          Character->CursorToWorld->SetVisibility(true);

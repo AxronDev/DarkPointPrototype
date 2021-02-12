@@ -54,7 +54,7 @@ public:
 	void Server_ChangePlayerState(EPlayerState NewState);
 	
 	UPROPERTY(replicated)
-	EPlayerState RTSPlayerState;
+	EPlayerState RTSPlayerState = EPlayerState::Default;
 
 	UPROPERTY(replicated)
 	bool bCanPosition = true;
@@ -110,6 +110,12 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_CreateUnit(TSubclassOf<ARTSPrototypeCharacter> UnitClass);
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_BuyUnit(uint8 UnitCost);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_DestroyUnit();
+
 	UFUNCTION(Client, Reliable)
 	void PrepareUnit(AActor* NewUnit);
 
@@ -127,6 +133,7 @@ private:
 	void DPress();
 	void FPress();
 
+	UPROPERTY(replicated)
 	bool bUnitButtons = false;
 
 	UPROPERTY(EditAnywhere)

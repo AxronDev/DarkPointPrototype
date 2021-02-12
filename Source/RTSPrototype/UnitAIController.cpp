@@ -60,10 +60,21 @@ void AUnitAIController::CanAttack()
 
 void AUnitAIController::AssignTarget() 
 {
-     if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE)
+     bool bFindNewTarget = false;
+     if(Target == nullptr)
      {
-          UE_LOG(LogTemp, Display, TEXT("Target null or not in Enemy array"));
+          bFindNewTarget = true;
+     }
+
+     else if(EnemyUnits.Find(Target) == INDEX_NONE || Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
+     {
+          bFindNewTarget = true;
+     }
+
+     if(bFindNewTarget == true)
+     {
           Target = nullptr;
+          UE_LOG(LogTemp, Display, TEXT("Target null or not in Enemy array"));
           for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
           {
                for(uint8 Slot = 0; Slot < Char->AttackSlots.Num(); Slot++)
@@ -108,7 +119,7 @@ void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors)
                     break;
                     FAIStimulus Stim = Info.LastSensedStimuli[0];
                     // Check if sight is lost
-                    if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge)
+                    if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge || Cast<ARTSPrototypeCharacter>(Unit)->GetCharacterState() == ECharacterState::Dead)
                     {
                          int Index = EnemyUnits.Remove(Cast<ARTSPrototypeCharacter>(Unit));
                     }
@@ -158,8 +169,16 @@ void AUnitAIController::Tick(float DeltaSeconds)
      {
           if(Char->GetCharacterState() == ECharacterState::Aggressive)
           {
-               // AIPercep->SetSenseEnabled(SightSenseClass, true);
-               if(Target)
+               if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE || Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
+               {
+                    TArray<AActor*> Actors{};
+                    for(uint8 i = 0; i < Actors.Num(); i++)
+                    {
+                         Actors[i] = Cast<AActor>(EnemyUnits[i]);
+                    }
+                    SortEnemyObjects(Actors);
+               }
+               else
                {
                     MoveToActor(Target, Char->DistToTarget, true, true, true);
                     

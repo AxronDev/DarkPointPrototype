@@ -7,12 +7,14 @@
 
 class AUnitAIController;
 class UDamageType;
+class USphereComponent;
 
 UENUM()
 enum class ECharacterState : uint8
 {
 	Passive,
 	Aggressive,
+	Dead,
 };
 
 UCLASS(Blueprintable)
@@ -76,6 +78,9 @@ public:
     UPROPERTY(EditDefaultsOnly)
     float AttackDamage = 5.f;
 
+    UPROPERTY(EditAnywhere)
+    uint8 UnitCost = 1;
+
     /* UPROPERTY(EditDefaultsOnly)
     float MovementSpeed = 200.f; */
 
@@ -100,9 +105,14 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MaxHealth = 100;
 
+	/* UPROPERTY(EditDefaultsOnly)
+	USphereComponent* FogOfWarView; */
+
 private:
 	UPROPERTY(replicated)
 	ECharacterState CharacterState = ECharacterState::Passive;
+
+	void Death();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_GetUnitController();

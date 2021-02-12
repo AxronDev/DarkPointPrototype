@@ -7,13 +7,14 @@
 #include "Building.generated.h"
 
 class UDecalComponent;
+class USceneComponent;
 
 UCLASS()
 class RTSPROTOTYPE_API ABuilding : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
+public:
 	// Sets default values for this actor's properties
 	ABuilding();
 
@@ -24,13 +25,17 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FName BuildingType;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
+	UPROPERTY(EditDefaultsOnly)
 	UDecalComponent* CursorToWorld;
+
+	UPROPERTY(EditDefaultsOnly)
+	USceneComponent* Root;
 
 	FName GetBuildingType();
 

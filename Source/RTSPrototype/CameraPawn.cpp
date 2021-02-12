@@ -66,8 +66,8 @@ bool ACameraPawn::Server_AddGoldBuilding_Validate()
 void ACameraPawn::Server_AddUnitBuilding_Implementation() 
 {
 	UnitBuildings++;
-    FString DebugName = GetDebugName(GetController());
-    UE_LOG(LogTemp, Warning, TEXT("Unit Buildings: %i Owning PlayerController: %s"), UnitBuildings, *DebugName);
+	FString DebugName = GetDebugName(GetController());
+	UE_LOG(LogTemp, Warning, TEXT("Unit Buildings: %i Owning PlayerController: %s"), UnitBuildings, *DebugName);
 }
 
 bool ACameraPawn::Server_AddUnitBuilding_Validate()
