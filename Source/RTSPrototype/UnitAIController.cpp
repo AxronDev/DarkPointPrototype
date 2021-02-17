@@ -74,7 +74,6 @@ void AUnitAIController::AssignTarget()
      if(bFindNewTarget == true)
      {
           Target = nullptr;
-          UE_LOG(LogTemp, Display, TEXT("Target null or not in Enemy array"));
           for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
           {
                for(uint8 Slot = 0; Slot < Char->AttackSlots.Num(); Slot++)

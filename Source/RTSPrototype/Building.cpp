@@ -32,7 +32,7 @@ ABuilding::ABuilding()
 void ABuilding::BeginPlay()
 {
 	Super::BeginPlay();
-	CursorToWorld->SetVisibility(false);
+	CursorToWorld->SetVisibility(true);
 }
 
 // Called every frame
@@ -62,5 +62,10 @@ void ABuilding::SetOwnerUserName(FName UserName)
 FName ABuilding::GetOwnerUserName() 
 {
 	return OwnerUserName;
+}
+
+void ABuilding::CanPlace_Implementation(bool val) 
+{
+	
 }
 

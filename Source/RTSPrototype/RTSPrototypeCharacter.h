@@ -112,7 +112,8 @@ private:
 	UPROPERTY(replicated)
 	ECharacterState CharacterState = ECharacterState::Passive;
 
-	void Death();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Death();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_GetUnitController();

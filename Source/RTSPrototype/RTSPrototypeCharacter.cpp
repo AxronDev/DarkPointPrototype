@@ -166,16 +166,21 @@ float ARTSPrototypeCharacter::TakeDamage(float DamageAmount, struct FDamageEvent
 	if(Health <= 0)
 	{
 		DamageDealt = 0;
-		Death();
+		Server_Death();
 	}
 	return DamageDealt;
 }
 
-void ARTSPrototypeCharacter::Death() 
+void ARTSPrototypeCharacter::Server_Death_Implementation() 
 {
 	Server_ChangeCharacterState(ECharacterState::Dead);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision); // need to be called on server
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	// UE_LOG(LogTemp, Warning, TEXT("Set collision disabled on %s"), NETMODE_WORLD);
+}
+
+bool ARTSPrototypeCharacter::Server_Death_Validate() 
+{
+	return true;
 }
 
 void ARTSPrototypeCharacter::Tick(float DeltaSeconds)

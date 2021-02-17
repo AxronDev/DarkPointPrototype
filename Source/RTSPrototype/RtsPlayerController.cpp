@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "CameraPawn.h"
 #include "UnitAIController.h"
+#include "Components/DecalComponent.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
@@ -112,22 +113,6 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
                     {
                          Server_CreateUnit(SpeedClass);
                     }
-
-                    /* switch(PlacementBuffer->GetClass())
-                    {
-                         case MeleeClass :
-                              Server_CreateUnit(MeleeClass);
-                              break;
-                         case RangedClass :
-                              Server_CreateUnit(RangedClass);
-                              break;
-                         case TankClass :
-                              Server_CreateUnit(TankClass);
-                              break;
-                         case SpeedClass :
-                              Server_CreateUnit(SpeedClass);
-                              break;
-                    } */
                }
           }
      }
@@ -335,18 +320,28 @@ void ARtsPlayerController::LeftMousePress()
           {
                IsPressLeft = true;
           }
-          else
+          // Check if building
+          else if(Cast<ABuilding>(PlacementBuffer))
           {
-               // Check if building
-               if(Cast<ABuilding>(PlacementBuffer))
+               UE_LOG(LogTemp, Warning, TEXT("Building in placement buffer"));
+               ABuilding* BuildingBuffer = Cast<ABuilding>(PlacementBuffer);
+
+               if(BuildingBuffer->bCanPlace)
                {
-                    ABuilding* BuildingBuffer = Cast<ABuilding>(PlacementBuffer);
+                    UE_LOG(LogTemp, Warning, TEXT("Can Place Building"));
                     if(BuildingBuffer->GetBuildingType() == FName("Gold Building"))
                          PlayerPawn->Gold -= PlayerPawn->GoldPrice;
 
                     if(BuildingBuffer->GetBuildingType() == FName("Unit Building"))
                          PlayerPawn->Gold -= PlayerPawn->UnitPrice;
+
+                    Server_ChangePlayerState(EPlayerState::Default);
+
+                    BuildingBuffer->CursorToWorld->SetVisibility(false);
                }
+          }
+          else
+          {
                Server_ChangePlayerState(EPlayerState::Default);
           }
           

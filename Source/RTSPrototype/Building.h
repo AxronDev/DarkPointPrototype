@@ -31,7 +31,7 @@ public:
 
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDecalComponent* CursorToWorld;
 
 	UPROPERTY(EditDefaultsOnly)
@@ -48,6 +48,12 @@ public:
 
 	UPROPERTY(replicated)
 	bool bHasBeenPositioned = false;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Decal")
+	void CanPlace(bool val);
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bCanPlace = false;
 
 private:
 	UPROPERTY(replicated)
