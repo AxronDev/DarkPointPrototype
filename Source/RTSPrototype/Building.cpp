@@ -3,6 +3,7 @@
 
 #include "Building.h"
 #include "Components/DecalComponent.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -13,6 +14,9 @@ ABuilding::ABuilding()
 
 	Root = CreateDefaultSubobject<USceneComponent>("Root");
 	SetRootComponent(Root);
+
+	// Setup stimuli for sight
+	Stimuli = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>("Stimuli");
 
 	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
 	CursorToWorld->SetupAttachment(RootComponent);
@@ -49,6 +53,18 @@ void ABuilding::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifeti
 	DOREPLIFETIME(ABuilding, bHasBeenPositioned);
 }
 
+float ABuilding::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) 
+{
+	float DamageDealt = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	Health -= DamageDealt;
+	if(Health <= 0)
+	{
+		DamageDealt = DamageDealt - Health;
+		Server_Death();
+	}
+	return DamageDealt;
+}
+
 FName ABuilding::GetBuildingType() 
 {
 	return BuildingType;
@@ -62,6 +78,21 @@ void ABuilding::SetOwnerUserName(FName UserName)
 FName ABuilding::GetOwnerUserName() 
 {
 	return OwnerUserName;
+}
+
+float ABuilding::GetHealth() 
+{
+	return Health;
+}
+
+void ABuilding::Server_Death_Implementation() 
+{
+	Destroy();
+}
+
+bool ABuilding::Server_Death_Validate()
+{
+	return true;
 }
 
 void ABuilding::CanPlace_Implementation(bool val) 

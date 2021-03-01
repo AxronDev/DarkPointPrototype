@@ -7,6 +7,8 @@
 #include "CameraPawn.generated.h"
 
 class ARTSPrototypeCharacter;
+class USceneComponent;
+class UDecalComponent;
 
 UCLASS()
 class RTSPROTOTYPE_API ACameraPawn : public APawn
@@ -26,6 +28,16 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Indicatior, meta = (AllowPrivateAccess = "true"))
+	class UDecalComponent* CursorToWorld;
+
+	UPROPERTY(replicated)
+	UMaterialInstance* WhiteX;
+
+	UPROPERTY(replicated)
+	UMaterialInstance* RedX;
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -53,6 +65,10 @@ public:
 	float UnitPrice = 100.f;
 
 private:
+
+	UPROPERTY(EditDefaultsOnly)
+	USceneComponent* RootComp;
+
 	UPROPERTY(EditAnywhere)
 	float PanRate = 1500;
 

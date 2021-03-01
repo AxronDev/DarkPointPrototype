@@ -3,6 +3,8 @@
 
 #include "CameraPawn.h"
 #include "RtsPlayerController.h"
+#include "Components/SceneComponent.h"
+#include "Components/DecalComponent.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -11,6 +13,27 @@ ACameraPawn::ACameraPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	//Create Root Component
+	RootComp = CreateDefaultSubobject<USceneComponent>("Root");
+	SetRootComponent(RootComp);
+
+	// Create Player CursorToWorld
+     CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
+	CursorToWorld->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> DecalMaterialAssetWhite(TEXT("Material'/Game/TopDownCPP/HUD/WhiteX.WhiteX'"));
+	if (DecalMaterialAssetWhite.Succeeded())
+	{
+          WhiteX = DecalMaterialAssetWhite.Object;
+		CursorToWorld->SetDecalMaterial(DecalMaterialAssetWhite.Object);
+	}
+     static ConstructorHelpers::FObjectFinder<UMaterialInstance> DecalMaterialAssetRed(TEXT("Material'/Game/TopDownCPP/HUD/RedX.RedX'"));
+	if (DecalMaterialAssetRed.Succeeded())
+	{
+          RedX = DecalMaterialAssetRed.Object;
+	}
+	CursorToWorld->DecalSize = FVector(50.0f, 50.0f, 50.0f);
+	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
+     CursorToWorld->SetVisibility(false);
 }
 
 // Called when the game starts or when spawned
@@ -43,6 +66,8 @@ void ACameraPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLife
 	DOREPLIFETIME(ACameraPawn, GoldBuildings);
 	DOREPLIFETIME(ACameraPawn, UnitBuildings);
 	DOREPLIFETIME(ACameraPawn, MyUnits);
+     DOREPLIFETIME(ACameraPawn, WhiteX); 
+     DOREPLIFETIME(ACameraPawn, RedX); 
 }
 
 // Called to bind functionality to input

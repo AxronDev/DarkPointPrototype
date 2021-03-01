@@ -39,16 +39,17 @@ public:
     UPROPERTY(EditAnywhere)
     TSubclassOf<UAISense> NoneSenseClass;
 
-    TArray<ARTSPrototypeCharacter*> EnemyUnits;
+    TArray<AActor*> EnemyUnits;
     // TArray<AActor*>& Actors;
     
-    ARTSPrototypeCharacter* Target;
+    AActor* Target;
     
 protected:
     virtual void BeginPlay() override;
 
     UAISenseConfig_Sight* SightSenseConfig;
 
+    UPROPERTY(EditDefaultsOnly)
     UAIPerceptionComponent* AIPercep;
 
 private:

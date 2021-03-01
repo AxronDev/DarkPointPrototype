@@ -10,6 +10,7 @@
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
 #include "Net/UnrealNetwork.h"
+#include "Materials/MaterialInstance.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h" 
 #include "NavigationSystem.h"
 #include "RTSPrototype/GameHUD.h"
@@ -37,8 +38,9 @@ void ARtsPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> 
      DOREPLIFETIME(ARtsPlayerController, SelectedUnits);
      DOREPLIFETIME(ARtsPlayerController, SelectedBuildings);
      DOREPLIFETIME(ARtsPlayerController, PlayerPawn);
+     DOREPLIFETIME(ARtsPlayerController, ControlledPawn);
      DOREPLIFETIME(ARtsPlayerController, bAggressive);
-     DOREPLIFETIME(ARtsPlayerController, bUnitButtons);
+     DOREPLIFETIME(ARtsPlayerController, bUnitButtons); 
 }
 
 FName ARtsPlayerController::GetUserName() 
@@ -69,7 +71,8 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
 
      if(PlayerPawn == nullptr && HasAuthority())
      {
-          Server_SetPlayerPawn();
+          ACameraPawn* CamPawn = GetPawn<ACameraPawn>();
+          Server_SetPlayerPawn(CamPawn);
      }
 
      // Return Enum Value
@@ -125,12 +128,12 @@ void ARtsPlayerController::CanPosition()
      bCanPosition = true;
 }
 
-void ARtsPlayerController::Server_SetPlayerPawn_Implementation() 
+void ARtsPlayerController::Server_SetPlayerPawn_Implementation(ACameraPawn* Camera) 
 {
-     if(GetPawn<ACameraPawn>())
+     if(Camera)
      {
           UE_LOG(LogTemp, Warning, TEXT("Got Pawn %s"), NETMODE_WORLD);
-          PlayerPawn = GetPawn<ACameraPawn>();
+          PlayerPawn = Camera;
      }
      else
      {
@@ -138,7 +141,7 @@ void ARtsPlayerController::Server_SetPlayerPawn_Implementation()
      }
 }
 
-bool ARtsPlayerController::Server_SetPlayerPawn_Validate() 
+bool ARtsPlayerController::Server_SetPlayerPawn_Validate(ACameraPawn* Camera) 
 {
      return true;
 }
@@ -165,7 +168,7 @@ void ARtsPlayerController::BeginPlay()
 
      RTSPlayerState = EPlayerState::Default;
 
-     PlayerPawn = Cast<ACameraPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+     // PlayerPawn = Cast<ACameraPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 
      UE_LOG(LogTemp, Warning, TEXT("PlayerController made %s"), NETMODE_WORLD);
      if(HasAuthority())
@@ -184,7 +187,8 @@ void ARtsPlayerController::BeginPlay()
      else
      {
           Server_SetUsername(FName("Josh"));
-          Server_SetPlayerPawn();
+          ACameraPawn* CamPawn = GetPawn<ACameraPawn>();
+          Server_SetPlayerPawn(CamPawn);
      }
 }
 
@@ -208,46 +212,25 @@ void ARtsPlayerController::SetupInputComponent()
 }
 
 void ARtsPlayerController::MoveTo()
-{
-     /* UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
-	GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
-
-	if (Hit.bBlockingHit)
-	{
-          UE_LOG(LogTemp, Warning, TEXT("Hit Something at X: %f Y: %f Z: %f"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z);
-		// We hit something, cycle through selected units and move there
-          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
-          {
-               if(bAggressive == true)
-               {
-                    Unit->ChangeCharacterState(ECharacterState::Aggressive);
-                    // UE_LOG(LogTemp, Warning, TEXT("Attack"));
-               }
-               else 
-               {
-                    Unit->ChangeCharacterState(ECharacterState::Passive);
-                    // UE_LOG(LogTemp, Warning, TEXT("Passive"));
-               }
-               AUnitAIController* UnitController = Cast<AUnitAIController>(Unit->GetController());
-               if(UnitController != nullptr)
-               {
-                    FString UnitName = Cast<AAIController>(UnitController)->GetDebugName(UnitController);
-                    UE_LOG(LogTemp, Warning, TEXT("Attained unit controller %s"), *UnitName);
-                    
-                    UnitController->MoveUnit(Hit.ImpactPoint);
-                    // UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.ImpactPoint);
-               }
-               else
-               {
-                    UE_LOG(LogTemp, Warning, TEXT("Failed to get unit controller"));
-               }
-               
-          }
-	} */
-     
+{     
      FHitResult Hit;
-    GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
-     
+     GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
+     if(bAggressive == true)
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Attack"));
+          PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->RedX);
+          PlayerPawn->CursorToWorld->SetWorldLocation(Hit.ImpactPoint);
+          PlayerPawn->CursorToWorld->SetVisibility(true);
+     }
+
+     else 
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Passive"));
+          PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->WhiteX);
+          PlayerPawn->CursorToWorld->SetWorldLocation(Hit.ImpactPoint);
+          PlayerPawn->CursorToWorld->SetVisibility(true);
+     }
+
      Server_MoveTo(Hit, SelectedUnits);
 }
 

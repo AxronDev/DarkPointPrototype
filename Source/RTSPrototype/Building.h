@@ -8,6 +8,8 @@
 
 class UDecalComponent;
 class USceneComponent;
+class UAIPerceptionStimuliSourceComponent;
+class UAISense;
 
 UCLASS()
 class RTSPROTOTYPE_API ABuilding : public AActor
@@ -25,11 +27,25 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FName BuildingType;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MaxHealth = 500;
+
+	UPROPERTY(EditDefaultsOnly, replicated)
+	float Health = MaxHealth;
+
+	UPROPERTY(EditDefaultsOnly)
+	UAIPerceptionStimuliSourceComponent* Stimuli;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UAISense> SightSense;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
+    virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDecalComponent* CursorToWorld;
@@ -44,6 +60,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FName GetOwnerUserName();
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;
 
 	UPROPERTY(replicated)
@@ -55,8 +72,14 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bCanPlace = false;
 
+	UFUNCTION(BlueprintCallable)
+	float GetHealth();
+
 private:
 	UPROPERTY(replicated)
 	FName OwnerUserName = "";
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Death();
 
 };

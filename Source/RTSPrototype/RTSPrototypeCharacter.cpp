@@ -165,7 +165,7 @@ float ARTSPrototypeCharacter::TakeDamage(float DamageAmount, struct FDamageEvent
 	Health -= DamageDealt;
 	if(Health <= 0)
 	{
-		DamageDealt = 0;
+		DamageDealt = DamageDealt - Health;
 		Server_Death();
 	}
 	return DamageDealt;

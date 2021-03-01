@@ -11,6 +11,7 @@ class AGameHUD;
 class ACameraPawn;
 class ABuilding;
 class AAIController;
+class UMaterialInstance;
 
 /**
  * 
@@ -47,7 +48,7 @@ public:
 
 	virtual void PlayerTick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, replicated)
 	APawn* ControlledPawn = nullptr;
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -61,9 +62,10 @@ public:
 
 protected:
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_SetPlayerPawn();
+	void Server_SetPlayerPawn(ACameraPawn* Camera);
 
 private:
+
 	UPROPERTY(replicated)
 	ACameraPawn* PlayerPawn;
 
