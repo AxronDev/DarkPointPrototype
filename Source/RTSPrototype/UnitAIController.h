@@ -39,10 +39,10 @@ public:
     UPROPERTY(EditAnywhere)
     TSubclassOf<UAISense> NoneSenseClass;
 
-    TArray<AActor*> EnemyUnits;
+    TArray<ARTSPrototypeCharacter*> EnemyUnits;
     // TArray<AActor*>& Actors;
     
-    AActor* Target;
+    ARTSPrototypeCharacter* Target;
     
 protected:
     virtual void BeginPlay() override;

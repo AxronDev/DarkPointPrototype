@@ -6,7 +6,6 @@
 #include "RTSPrototypeCharacter.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionTypes.h"
-#include "Building.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "TimerManager.h"
 #include "Engine/EngineTypes.h"
@@ -43,23 +42,14 @@ void AUnitAIController::BeginPlay()
 
 bool AUnitAIController::WithinRange() 
 {
-     if(Char && Target)
+     if(Target->GetDistanceTo(Char) <= Char->AttackDist && Target->GetDistanceTo(Char) != -2.f)
      {
-          // UE_LOG(LogTemp, Display, TEXT("Target is %f cm away"), Target->GetDistanceTo(Char));
-          if(Target->GetDistanceTo(Char) <= Char->AttackDist && Target->GetDistanceTo(Char) != -2.f)
-          {
-               return true;
-          }
-          else
-          {
-               return false;
-          }
+          return true;
      }
      else
      {
           return false;
      }
-     
 }
 
 void AUnitAIController::CanAttack() 
@@ -74,52 +64,40 @@ void AUnitAIController::AssignTarget()
      {
           bFindNewTarget = true;
      }
-     else if(EnemyUnits.Find(Target) == INDEX_NONE)
+
+     else if(EnemyUnits.Find(Target) == INDEX_NONE || Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
      {
           bFindNewTarget = true;
      }
-     else if(Cast<ARTSPrototypeCharacter>(Target) != nullptr)
-     {
-          UE_LOG(LogTemp, Warning, TEXT("Cast Succeded Assign Unit Target"));
-          if(Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
-          {
-               UE_LOG(LogTemp, Warning, TEXT("Old target is dead"));
-               bFindNewTarget = true;
-          }
-     }
 
-     if(bFindNewTarget == true)
+     if(bFindNewTarget == true && Char)
      {
           Target = nullptr;
-          for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
+          for(uint8 Slot = 0; Slot < Char->AttackSlots.Num(); Slot++)
           {
-               for(uint8 Slot = 0; Slot < Char->AttackSlots.Num(); Slot++)
+               for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
                {
-                    if(EnemyUnits[UnitIndex])
+                    // Check if attack slot is empty
+                    if(EnemyUnits[UnitIndex]->AttackSlots[Slot] == false)
                     {
                          if(Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex]))
                          {
-                              if(Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex])->AttackSlots[Slot] == false)
-                              {
-                                   Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex])->AttackSlots[Slot] = true;
-                                   Target = EnemyUnits[UnitIndex];
-                                   UE_LOG(LogTemp, Warning, TEXT("Unit being Assigned as Target"));
-                                   Slot = Char->AttackSlots.Num();
-                                   UnitIndex = EnemyUnits.Num();
-                              }
+                              // Set slot to taken and assign Target
+                              EnemyUnits[UnitIndex]->AttackSlots[Slot] = true;
+                              Target = Cast<ARTSPrototypeCharacter>(EnemyUnits[UnitIndex]);
+                              UE_LOG(LogTemp, Warning, TEXT("Cast Succeded AssignTarget"));
+                              // End looking for target
+                              Slot = Char->AttackSlots.Num();
+                              UnitIndex = EnemyUnits.Num();
                          }
-                         else if(Cast<ABuilding>(EnemyUnits[UnitIndex]))
+                         else
                          {
-                              if(Cast<ABuilding>(EnemyUnits[UnitIndex])->AttackSlots[Slot] == false)
-                              {
-                                   Cast<ABuilding>(EnemyUnits[UnitIndex])->AttackSlots[Slot] = true;
-                                   Target = EnemyUnits[UnitIndex];
-                                   UE_LOG(LogTemp, Warning, TEXT("Building being Assigned as Target"));
-                                   Slot = Char->AttackSlots.Num();
-                                   UnitIndex = EnemyUnits.Num();
-                              }
+                              UE_LOG(LogTemp, Warning, TEXT("Cast Failed AssignTarget"));
                          }
                     }
+                    /* FString UnitName = GetDebugName(units);
+                    FString Auth;    
+                    UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName); */
                }
           }
      }
@@ -127,65 +105,51 @@ void AUnitAIController::AssignTarget()
 
 void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors) 
 {
-     if(Actors.Num() >= 1)
+     if(Char->GetCharacterState() == ECharacterState::Dead)
      {
-          // UE_LOG(LogTemp, Warning, TEXT("Perception Updated"));
-          for(AActor* Unit : Actors)
+          return;
+     }
+     // UE_LOG(LogTemp, Warning, TEXT("Perception Updated"));
+     for(AActor* Unit : Actors)
+     {
+          // Check if Unit
+          if(Cast<ARTSPrototypeCharacter>(Unit) && Char)
           {
-               // Check if Unit
-               if(Cast<ARTSPrototypeCharacter>(Unit))
+               // Check if enemy
+               if(Cast<ARTSPrototypeCharacter>(Unit)->GetOwnerUserName() != Char->GetOwnerUserName())
                {
-                    // Check if enemy unit
-                    if(Cast<ARTSPrototypeCharacter>(Unit)->GetOwnerUserName() != Char->GetOwnerUserName())
+                    FActorPerceptionBlueprintInfo Info;
+                    AIPercep->GetActorsPerception(Unit, Info);
+                    if(Info.LastSensedStimuli.Num() == 0)
+                    break;
+                    FAIStimulus Stim = Info.LastSensedStimuli[0];
+                    // Check if should be targeted
+                    if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge || Cast<ARTSPrototypeCharacter>(Unit)->GetCharacterState() == ECharacterState::Dead)
                     {
-                         FActorPerceptionBlueprintInfo Info;
-                         AIPercep->GetActorsPerception(Unit, Info);
-                         if(Info.LastSensedStimuli.Num() == 0)
+                         // Check if in Enemy units and remove if it is
+                         if(EnemyUnits.Find(Cast<ARTSPrototypeCharacter>(Unit)) != INDEX_NONE)
                          {
-                              break;
-                         }
-                         FAIStimulus Stim = Info.LastSensedStimuli[0];
-                         // Check if sight is lost
-                         if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge || Cast<ARTSPrototypeCharacter>(Unit)->GetCharacterState() == ECharacterState::Dead)
-                         {
-                              int Index = EnemyUnits.Remove(Unit);
-                         }
-                         else
-                         {
-                              FString UnitName = GetDebugName(Unit);   
-                              UE_LOG(LogTemp, Warning, TEXT("Can see unit %s"), *UnitName);
-                              EnemyUnits.Add(Unit);
+                              EnemyUnits.Remove(Cast<ARTSPrototypeCharacter>(Unit));
                          }
                     }
-               }
-               else if(Cast<ABuilding>(Unit))
-               {
-                    // Check if enemy building
-                    if(Cast<ABuilding>(Unit)->GetOwnerUserName() != Char->GetOwnerUserName())
+                    else
                     {
-                         FActorPerceptionBlueprintInfo Info;
-                         AIPercep->GetActorsPerception(Unit, Info);
-                         if(Info.LastSensedStimuli.Num() == 0)
-                         break;
-                         FAIStimulus Stim = Info.LastSensedStimuli[0];
-                         // Check if sight is lost
-                         if(Stim.WasSuccessfullySensed() == false || Stim.GetAge() >= MaxAge)
+                         FString UnitName = GetDebugName(Unit);   
+                         UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName);
+                         // Check if in Enemy units and add if it isn't
+                         if(EnemyUnits.Find(Cast<ARTSPrototypeCharacter>(Unit)) == INDEX_NONE)
                          {
-                              int Index = EnemyUnits.Remove(Unit);
-                         }
-                         else
-                         {
-                              FString UnitName = GetDebugName(Unit);   
-                              UE_LOG(LogTemp, Warning, TEXT("Can see building %s"), *UnitName);
-                              EnemyUnits.Add(Unit);
+                              EnemyUnits.Add(Cast<ARTSPrototypeCharacter>(Unit));
                          }
                     }
                }
           }
-
-          AssignTarget();
      }
 
+     if(EnemyUnits.Num() != 0)
+     {
+          AssignTarget();
+     }
 }
 
 void AUnitAIController::Server_GetAICharacter_Implementation() 
@@ -221,31 +185,17 @@ void AUnitAIController::Tick(float DeltaSeconds)
      {
           if(Char->GetCharacterState() == ECharacterState::Aggressive)
           {
-               // UE_LOG(LogTemp, Warning, TEXT("Aggressive in AIController Tick"));
-               if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE)
+               if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE || Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
                {
-                    /* TArray<AActor*> Actors{};
+                    TArray<AActor*> Actors{};
                     for(uint8 i = 0; i < Actors.Num(); i++)
                     {
                          Actors[i] = Cast<AActor>(EnemyUnits[i]);
-                    } */
-                    SortEnemyObjects(EnemyUnits);
-                    UE_LOG(LogTemp, Warning, TEXT("Target is null or not in Enemy array in AIController Tick"));
-               }
-               else if(Cast<ARTSPrototypeCharacter>(Target))
-               {
-                    if(Cast<ARTSPrototypeCharacter>(Target)->GetCharacterState() == ECharacterState::Dead)
-                    {
-                         /* TArray<AActor*> Actors{};
-                         for(uint8 i = 0; i < Actors.Num(); i++)
-                         {
-                              Actors[i] = Cast<AActor>(EnemyUnits[i]);
-                         } */
-                         SortEnemyObjects(EnemyUnits);
-                         UE_LOG(LogTemp, Warning, TEXT("Target Dead AIController Tick"));
                     }
-
-                    UE_LOG(LogTemp, Warning, TEXT("Target is Valid1 AIController Tick"));
+                    SortEnemyObjects(Actors);
+               }
+               else
+               {
                     MoveToActor(Target, Char->DistToTarget, true, true, true);
                     
                     if(WithinRange())
@@ -254,24 +204,7 @@ void AUnitAIController::Tick(float DeltaSeconds)
                          if(Char->bCanAttack == true)
                          {
                               UE_LOG(LogTemp, Display, TEXT("Can attack"));
-                              Char->Attack(Target);
-                              Char->bCanAttack = false;
-                              GetWorldTimerManager().SetTimer(Timer, this, &AUnitAIController::CanAttack, Char->AttackSpeed);
-                         }
-                    }
-               }
-               else if(Cast<ABuilding>(Target))
-               {
-                    UE_LOG(LogTemp, Warning, TEXT("Target is Valid1 AIController Tick"));
-                    MoveToActor(Target, Char->DistToTarget, true, true, true);
-                    
-                    if(WithinRange())
-                    {
-                         UE_LOG(LogTemp, Display, TEXT("Within range"));
-                         if(Char->bCanAttack == true)
-                         {
-                              UE_LOG(LogTemp, Display, TEXT("Can attack"));
-                              Char->Attack(Target);
+                              Char->Attack(Cast<AActor>(Target));
                               Char->bCanAttack = false;
                               GetWorldTimerManager().SetTimer(Timer, this, &AUnitAIController::CanAttack, Char->AttackSpeed);
                          }
@@ -281,7 +214,6 @@ void AUnitAIController::Tick(float DeltaSeconds)
           else if(Char->GetCharacterState() == ECharacterState::Passive)
           {
                // AIPercep->SetSenseEnabled(SightSenseClass, false);
-               // UE_LOG(LogTemp, Warning, TEXT("Passive in AIController Tick"));
           }
           
      }

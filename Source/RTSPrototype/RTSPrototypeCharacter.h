@@ -109,7 +109,7 @@ protected:
 	USphereComponent* FogOfWarView; */
 
 private:
-	UPROPERTY(replicated)
+	UPROPERTY(replicated, VisibleAnywhere)
 	ECharacterState CharacterState = ECharacterState::Passive;
 
 	UFUNCTION(Server, Reliable, WithValidation)
