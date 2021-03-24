@@ -4,6 +4,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
+#include "RtsPlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -82,6 +83,12 @@ void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
      DOREPLIFETIME(ARTSPrototypeCharacter, CharacterState);
 	DOREPLIFETIME(ARTSPrototypeCharacter, Health);
 	DOREPLIFETIME(ARTSPrototypeCharacter, bHasBeenPositioned);
+	DOREPLIFETIME(ARTSPrototypeCharacter, OwningPlayer);
+}
+
+void ARTSPrototypeCharacter::SetOwningPlayer(ARtsPlayerController* PlayerToSet) 
+{
+	OwningPlayer = PlayerToSet;
 }
 
 void ARTSPrototypeCharacter::BeginPlay()

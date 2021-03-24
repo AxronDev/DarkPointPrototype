@@ -8,7 +8,9 @@
 #include "UnitAIController.h"
 #include "Components/DecalComponent.h"
 #include "Components/BoxComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Engine/Engine.h"
+#include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 #include "Materials/MaterialInstance.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h" 
@@ -41,11 +43,37 @@ void ARtsPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> 
      DOREPLIFETIME(ARtsPlayerController, ControlledPawn);
      DOREPLIFETIME(ARtsPlayerController, bAggressive);
      DOREPLIFETIME(ARtsPlayerController, bUnitButtons); 
+     DOREPLIFETIME(ARtsPlayerController, bCanPosition);
 }
 
 FName ARtsPlayerController::GetUserName() 
 {
      return UserName;
+}
+
+void ARtsPlayerController::NextMoveQueue() 
+{
+     if(QueuedMovements.Num() == 0)
+          return;
+     if(QueueNum == (QueuedMovements.Num() - 1))
+     {
+          ResetMoveQueue();
+          return;
+     }
+     QueueNum++;
+     MoveToHit = QueuedMovements[QueueNum];
+     for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+     {
+          Cast<AUnitAIController>(Unit->GetController())->SetHit(MoveToHit);
+          UE_LOG(LogTemp, Warning, TEXT("Set Hit"));
+     }
+     MoveTo();
+}
+
+void ARtsPlayerController::ResetMoveQueue() 
+{
+     QueueNum = 0;
+     QueuedMovements.Empty();
 }
 
 void ARtsPlayerController::Server_SetUsername_Implementation(const FName& NewUserName)
@@ -66,7 +94,7 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
 {
      Super::PlayerTick(DeltaTime);
 
-     ForceNetUpdate();
+     // ForceNetUpdate();
      // UE_LOG(LogTemp, Warning, TEXT("Forced Net Update Tick"));
 
      if(PlayerPawn == nullptr && HasAuthority())
@@ -120,7 +148,61 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
           }
      }
 
+     /* if(GetPawn() != nullptr && MoveToHit.bBlockingHit == true)
+     {
+          // Has some leniance
+          if((MoveToHit.Location.X >= (GetPawn()->GetActorLocation().X - 100) || MoveToHit.Location.X <= (GetPawn()->GetActorLocation().X + 100)) && (MoveToHit.Location.Y >= (GetPawn()->GetActorLocation().Y - 100) || MoveToHit.Location.Y <= (GetPawn()->GetActorLocation().Y + 100)))
+          {
+               UE_LOG(LogTemp, Warning, TEXT("Arrived at destination"));
+          }
+     }
+ */
      ControlledPawn = GetPawn();
+}
+
+void ARtsPlayerController::MultiRightMouse() 
+{
+     if(SelectedUnits.Num() == 0)
+     {
+          return;
+     }
+     UE_LOG(LogTemp, Warning, TEXT("Shift Right Click %i"), QueuedMovements.Num());
+     FHitResult Hit;
+     GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
+     if(QueuedMovements.Num() == 0)
+     {
+          MoveToHit = Hit;
+          UE_LOG(LogTemp, Warning, TEXT("First Move in sequence"));
+          MoveTo();
+     
+          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+          {
+               Cast<AUnitAIController>(Unit->GetController())->SetHit(Hit);
+               UE_LOG(LogTemp, Warning, TEXT("Set Hit"));
+          }
+     }
+     QueuedMovements.Add(Hit);
+}
+
+void ARtsPlayerController::ShiftPress() 
+{
+     bIsShiftPress = true;
+}
+
+void ARtsPlayerController::ShiftReleased() 
+{
+     bIsShiftPress = false;
+}
+
+void ARtsPlayerController::Server_SetBuildingState_Implementation(ABuilding* NewBuilding, EBuildingState NewState) 
+{
+     UE_LOG(LogTemp, Warning, TEXT("PC Server Calling Building state change %s"), NETMODE_WORLD);
+     NewBuilding->Server_SetBuildingState(NewState);
+}
+
+bool ARtsPlayerController::Server_SetBuildingState_Validate(ABuilding* NewBuilding, EBuildingState NewState) 
+{
+     return true;
 }
 
 void ARtsPlayerController::CanPosition() 
@@ -209,17 +291,17 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("D", IE_Released, this, &ARtsPlayerController::DPress);
      InputComponent->BindAction("F", IE_Released, this, &ARtsPlayerController::FPress);
      InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::Server_SetAggression);
+     InputComponent->BindAction("Shift", IE_Pressed, this, &ARtsPlayerController::ShiftPress);
+     InputComponent->BindAction("Shift", IE_Released, this, &ARtsPlayerController::ShiftReleased);
 }
 
 void ARtsPlayerController::MoveTo()
-{     
-     FHitResult Hit;
-     GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
+{
      if(bAggressive == true)
      {
           UE_LOG(LogTemp, Warning, TEXT("Attack"));
           PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->RedX);
-          PlayerPawn->CursorToWorld->SetWorldLocation(Hit.ImpactPoint);
+          PlayerPawn->CursorToWorld->SetWorldLocation(MoveToHit.ImpactPoint);
           PlayerPawn->CursorToWorld->SetVisibility(true);
      }
 
@@ -227,11 +309,11 @@ void ARtsPlayerController::MoveTo()
      {
           UE_LOG(LogTemp, Warning, TEXT("Passive"));
           PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->WhiteX);
-          PlayerPawn->CursorToWorld->SetWorldLocation(Hit.ImpactPoint);
+          PlayerPawn->CursorToWorld->SetWorldLocation(MoveToHit.ImpactPoint);
           PlayerPawn->CursorToWorld->SetVisibility(true);
      }
 
-     Server_MoveTo(Hit, SelectedUnits);
+     Server_MoveTo(MoveToHit, SelectedUnits);
 }
 
 void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TArray<ARTSPrototypeCharacter*>& Units)
@@ -319,6 +401,8 @@ void ARtsPlayerController::LeftMousePress()
                          PlayerPawn->Gold -= PlayerPawn->UnitPrice;
 
                     Server_ChangePlayerState(EPlayerState::Default);
+                    UE_LOG(LogTemp, Warning, TEXT("Calling Change state in left press %s"), NETMODE_WORLD);
+                    Server_SetBuildingState(BuildingBuffer, EBuildingState::Built);
 
                     BuildingBuffer->CursorToWorld->SetVisibility(false);
                }
@@ -345,8 +429,22 @@ void ARtsPlayerController::LeftMouseRelease()
 void ARtsPlayerController::RightMousePress() 
 {
      if(RTSPlayerState == EPlayerState::Menu) return;
+     if(bIsShiftPress)
+     {
+          MultiRightMouse();
+          return;
+     }
+     QueueNum = 0;
+     QueuedMovements.Empty();
+     UE_LOG(LogTemp, Warning, TEXT("RightClick"));
      if(RTSPlayerState == EPlayerState::Default)
      {
+          // MoveToHit = NULL;
+          GetHitResultUnderCursor(ECC_GameTraceChannel2, false, MoveToHit);
+          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+          {
+               Cast<AUnitAIController>(Unit->GetController())->SetHit(MoveToHit);
+          }
           MoveTo();
      }
      else
@@ -456,13 +554,21 @@ void ARtsPlayerController::Server_CreateGoldBuilding_Implementation()
 
      if(PlayerPawn->Gold >= PlayerPawn->GoldPrice)
      {
+          // UE_LOG(LogTemp, Warning, TEXT("Starting Spawning Building")) SpawnActorDeferred , FTransform(FRotator(.0f)), this
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(GoldBuildingClass);
           if(PlacementBuffer)
           {
+               // Cast<ABuilding>(PlacementBuffer)->SetOwner(this);
+               // UE_LOG(LogTemp, Warning, TEXT("Set Building Owner"))
+               // UE_LOG(LogTemp, Warning, TEXT("CreatGoldBuilding Owner: %s on %s"), *GetDebugName(PlacementBuffer->GetOwner()), NETMODE_WORLD);
+               // UGameplayStatics::FinishSpawningActor(PlacementBuffer, FTransform(FRotator(.0f)));
+               // UE_LOG(LogTemp, Warning, TEXT("Finished Spawning Building"))
                Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
                PlayerPawn->Server_AddGoldBuilding();
                // Makes Tick call Server_PositionPlacement()
                Server_ChangePlayerState(EPlayerState::Placing);
+               UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create gold %s"), NETMODE_WORLD);
+               Cast<ABuilding>(PlacementBuffer)->Server_SetBuildingState(EBuildingState::Preview);
           }
      }
      else
@@ -483,17 +589,22 @@ void ARtsPlayerController::Server_CreateUnitBuilding_Implementation()
 
      if(PlayerPawn->Gold >= PlayerPawn->UnitPrice)
      {
+          /* FActorSpawnParameters SpawnParams;
+          SpawnParams.Owner = this; , SpawnParams */
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(UnitBuildingClass);
           if(PlacementBuffer)
           {
+               Cast<ABuilding>(PlacementBuffer)->SetOwner(this);
+               //UE_LOG(LogTemp, Warning, TEXT("Set Building Owner"))
                Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
-               
                FString LogName;
                UserName.ToString(LogName);
                UE_LOG(LogTemp, Warning, TEXT("Username: %s create unit building %s"), *LogName, NETMODE_WORLD)
                PlayerPawn->Server_AddUnitBuilding();
                // Makes Tick call Server_PositionPlacement()
                Server_ChangePlayerState(EPlayerState::Placing);
+               UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create unit %s"), NETMODE_WORLD);
+               Cast<ABuilding>(PlacementBuffer)->Server_SetBuildingState(EBuildingState::Preview);
           }
      }
      else
@@ -536,6 +647,7 @@ void ARtsPlayerController::Server_CreateUnit_Implementation(TSubclassOf<ARTSProt
      if(NewUnit)
      {
           Cast<ARTSPrototypeCharacter>(NewUnit)->SetOwnerUserName(UserName);
+          Cast<ARTSPrototypeCharacter>(NewUnit)->SetOwningPlayer(this);
           NewUnit->SetReplicates(true);
           PlayerPawn->MyUnits.Add(NewUnit);
           FString UnitName = GetDebugName(NewUnit);

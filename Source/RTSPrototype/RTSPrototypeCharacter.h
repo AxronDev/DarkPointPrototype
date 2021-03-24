@@ -8,6 +8,7 @@
 class AUnitAIController;
 class UDamageType;
 class USphereComponent;
+class ARtsPlayerController;
 
 UENUM()
 enum class ECharacterState : uint8
@@ -47,6 +48,11 @@ public:
 
 	bool bHasSpace = true;
 
+	UPROPERTY(replicated)
+	ARtsPlayerController* OwningPlayer;
+
+	void SetOwningPlayer(ARtsPlayerController* PlayerToSet);
+	
 	UFUNCTION(BlueprintCallable)
 	float GetHealth();
 

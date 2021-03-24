@@ -7,6 +7,9 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "RTSPrototypeCharacter.h"
+#include "RtsPlayerController.h"
+#include "Building.h"
 #include "TimerManager.h"
 #include "Engine/EngineTypes.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -115,7 +118,7 @@ void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors)
           // Check if Unit
           if(Cast<ARTSPrototypeCharacter>(Unit) && Char)
           {
-               // Check if enemy
+               // Check if enemy unit
                if(Cast<ARTSPrototypeCharacter>(Unit)->GetOwnerUserName() != Char->GetOwnerUserName())
                {
                     FActorPerceptionBlueprintInfo Info;
@@ -142,6 +145,11 @@ void AUnitAIController::SortEnemyObjects(const TArray<AActor*>& Actors)
                               EnemyUnits.Add(Cast<ARTSPrototypeCharacter>(Unit));
                          }
                     }
+               }
+               // Check if enemy building
+               if(Cast<ABuilding>(Unit))
+               {
+                    return;
                }
           }
      }
@@ -175,6 +183,12 @@ void AUnitAIController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & O
 {
      Super::GetLifetimeReplicatedProps(OutLifetimeProps);
      DOREPLIFETIME(AUnitAIController, Char);
+}
+
+void AUnitAIController::SetHit(FHitResult& InHit) 
+{
+    HitLoc = InHit;
+    UE_LOG(LogTemp, Warning, TEXT("Hit Set"));
 }
 
 void AUnitAIController::Tick(float DeltaSeconds)
@@ -221,4 +235,15 @@ void AUnitAIController::Tick(float DeltaSeconds)
      {
           UE_LOG(LogTemp, Warning, TEXT("Char is null in AIController Tick"));
      }
+
+     if(GetPawn() != nullptr)
+     {
+          // Has some leniance
+          if((HitLoc.Location.X >= (GetPawn()->GetActorLocation().X - 100) && HitLoc.Location.X <= (GetPawn()->GetActorLocation().X + 100)) && (HitLoc.Location.Y >= (GetPawn()->GetActorLocation().Y - 100) && HitLoc.Location.Y <= (GetPawn()->GetActorLocation().Y + 100)))
+          {
+               UE_LOG(LogTemp, Warning, TEXT("Arrived at destination Unit AI"));
+               Cast<ARTSPrototypeCharacter>(GetPawn())->OwningPlayer->NextMoveQueue();
+          }
+     }
+
 }

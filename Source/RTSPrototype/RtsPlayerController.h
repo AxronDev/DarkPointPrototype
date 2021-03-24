@@ -43,6 +43,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FName GetUserName();
 
+	void NextMoveQueue();
+
+	void ResetMoveQueue();
+
+	// Place in queue
+	uint8 QueueNum = 0;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetUsername(const FName& NewUserName);
 
@@ -65,6 +72,21 @@ protected:
 	void Server_SetPlayerPawn(ACameraPawn* Camera);
 
 private:
+
+	TArray<FHitResult> QueuedMovements;
+
+	FHitResult MoveToHit;
+
+	void MultiRightMouse();
+
+	bool bIsShiftPress;
+
+	void ShiftPress();
+
+	void ShiftReleased();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetBuildingState(ABuilding* NewBuilding, EBuildingState NewState);
 
 	UPROPERTY(replicated)
 	ACameraPawn* PlayerPawn;

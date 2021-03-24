@@ -33,6 +33,11 @@ public:
     UFUNCTION(Server, Reliable, WithValidation)
     void Server_GetAICharacter();
 
+    FHitResult HitLoc;
+
+    // UFUNCITON(Server, Reliable, WithValidation)
+    void SetHit(FHitResult& InHit);
+
     UPROPERTY(EditAnywhere)
     TSubclassOf<UAISense> SightSenseClass;
 
