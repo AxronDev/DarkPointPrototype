@@ -46,10 +46,10 @@ protected:
 	/* UMaterialInstanceDynamic* GoldMat;
 	UMaterialInstanceDynamic* UnitMat; */
 
-	UPROPERTY(BlueprintReadOnly, replicated)
+	UPROPERTY(BlueprintReadOnly)
 	UMaterialInstanceDynamic* GoldBuildingMat;
 
-	UPROPERTY(BlueprintReadOnly, replicated)
+	UPROPERTY(BlueprintReadOnly)
 	UMaterialInstanceDynamic* UnitBuildingMat;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)

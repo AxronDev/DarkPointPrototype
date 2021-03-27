@@ -115,8 +115,6 @@ void ABuilding::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifeti
 	DOREPLIFETIME(ABuilding, bHasBeenPositioned);
 	DOREPLIFETIME(ABuilding, OwnerUserName);
 	DOREPLIFETIME(ABuilding, BuildingState);
-	DOREPLIFETIME(ABuilding, GoldBuildingMat);
-	DOREPLIFETIME(ABuilding, UnitBuildingMat);
 }
 
 float ABuilding::TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) 
