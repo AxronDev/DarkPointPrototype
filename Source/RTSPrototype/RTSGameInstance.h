@@ -10,6 +10,7 @@
 class UUserWidget;
 class UMainMenu;
 class UPauseMenu;
+class ARtsPlayerController;
 
 /**
  * 
@@ -43,10 +44,14 @@ private:
 	TSubclassOf<UUserWidget> MenuClass;
 	TSubclassOf<UUserWidget> PauseMenuClass;
 	
+	uint8 NumPlayers{0};
+
 	UMainMenu* Menu;
 	UPauseMenu* PauseMenu;
 
 public:
 	UFUNCTION(BlueprintCallable)
 	virtual void LoadPauseMenu();
+
+	void NewPlayerController(ARtsPlayerController* NewPlayerController);
 };
