@@ -16,6 +16,8 @@ enum class ECharacterState : uint8
 	Passive,
 	Aggressive,
 	Dead,
+	Preview,
+	Placed,
 };
 
 UCLASS(Blueprintable)
@@ -30,8 +32,6 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 	virtual void BeginPlay();
-	
-    void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
 
@@ -86,7 +86,7 @@ public:
     UPROPERTY(EditDefaultsOnly)
     float AttackDamage = 5.f;
 
-    UPROPERTY(EditAnywhere)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
     uint8 UnitCost = 1;
 
     /* UPROPERTY(EditDefaultsOnly)
@@ -103,6 +103,9 @@ public:
     virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
 
 protected:
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnPlaced();
 
 	UPROPERTY(EditAnywhere, replicated)
 	FName OwnerUserName = "";

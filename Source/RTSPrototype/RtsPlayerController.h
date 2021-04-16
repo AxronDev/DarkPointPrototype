@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "RTSPrototypeCharacter.h"
 #include "RtsPlayerController.generated.h"
 
-class ARTSPrototypeCharacter;
 class AGameHUD;
 class ACameraPawn;
+class ARTSPrototypeCharacter;
 class ABuilding;
 class AAIController;
 class UMaterialInstance;
@@ -43,9 +44,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FName GetUserName();
 
-	void NextMoveQueue();
+	void NextMoveQueue(bool IsAggro);
 
-	void ResetMoveQueue();
+	UPROPERTY(replicated)
+	TArray<FHitResult> QueuedMovements{};
 
 	// Place in queue
 	uint8 QueueNum = 0;
@@ -73,11 +75,15 @@ protected:
 
 private:
 
-	TArray<FHitResult> QueuedMovements;
+	FVector StartLoc;
 
 	FHitResult MoveToHit;
 
-	void MultiRightMouse();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MultiRightMouse(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SinglePatrol(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit);
 
 	bool bIsShiftPress;
 
@@ -87,6 +93,9 @@ private:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetBuildingState(ABuilding* NewBuilding, EBuildingState NewState);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetUnitState(ARTSPrototypeCharacter* Unit, ECharacterState NewState);
 
 	UPROPERTY(replicated)
 	ACameraPawn* PlayerPawn;
@@ -98,11 +107,19 @@ private:
 
 	void CanPosition();
 
+	void StartPatrol(FHitResult First);
+
 	UPROPERTY(replicated)
 	bool bAggressive = false;
 
+	UPROPERTY(replicated)
+	bool bPatrol = false;
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetAggression();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_InversePatrol();
 
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

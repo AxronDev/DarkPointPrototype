@@ -11,6 +11,7 @@
 #include "RtsPlayerController.h"
 #include "Building.h"
 #include "TimerManager.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h" 
 #include "Engine/EngineTypes.h"
 #include "Perception/AISenseConfig_Sight.h"
 
@@ -41,6 +42,68 @@ void AUnitAIController::BeginPlay()
      PrimaryActorTick.bCanEverTick = true;
 
      AIPercep->SetSenseEnabled(SightSenseClass, true);
+}
+
+void AUnitAIController::NextMoveQueue(bool Aggro) 
+{
+     UE_LOG(LogTemp, Warning, TEXT("NextMoveQueue() Called"));
+     if(QueuedMovements.Num() <= 0)
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Queue Movements Empty"));
+          return;
+     }
+     if(QueueNum == (QueuedMovements.Num() - 1))
+     {
+          if(bPatroling)
+          {
+               UE_LOG(LogTemp, Warning, TEXT("Queue Finished Cycling as Patrol"));
+               // restart patrol loop
+               QueueNum = 0;
+          }
+          else
+          {
+               UE_LOG(LogTemp, Warning, TEXT("Queue Finished and will reset as not patrol"));
+               Server_ResetMoveQueue();
+               return;
+          }
+          
+     }
+     else
+     {
+          QueueNum++;
+     }
+
+     if(Aggro == true)
+     {
+          FHitResult MoveToHit = QueuedMovements[QueueNum];
+          SetHit(MoveToHit, true);
+     }
+     else
+     {
+          FHitResult MoveToHit = QueuedMovements[QueueNum];
+          SetHit(MoveToHit, false);
+     }
+}
+
+void AUnitAIController::Server_MoveTo_Implementation(FHitResult Hit, bool Aggressive) 
+{
+     if(Aggressive == true)
+     {
+          Char->Server_ChangeCharacterState(ECharacterState::Aggressive);
+          UE_LOG(LogTemp, Warning, TEXT("Attack"));
+     }
+     else 
+     {
+          Char->Server_ChangeCharacterState(ECharacterState::Passive);
+          UE_LOG(LogTemp, Warning, TEXT("Passive"));
+     }
+     UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, Hit.Location);
+     UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in UnitAIController Server MoveTo"));
+}
+
+bool AUnitAIController::Server_MoveTo_Validate(FHitResult Hit, bool Aggressive) 
+{
+     return true;
 }
 
 bool AUnitAIController::WithinRange() 
@@ -183,12 +246,38 @@ void AUnitAIController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & O
 {
      Super::GetLifetimeReplicatedProps(OutLifetimeProps);
      DOREPLIFETIME(AUnitAIController, Char);
+     DOREPLIFETIME(AUnitAIController, QueuedMovements);
+     DOREPLIFETIME(AUnitAIController, bPatroling);
 }
 
-void AUnitAIController::SetHit(FHitResult& InHit) 
+void AUnitAIController::SetPatroling(bool NewPatrol) 
 {
-    HitLoc = InHit;
-    UE_LOG(LogTemp, Warning, TEXT("Hit Set"));
+    bPatroling = NewPatrol;
+}
+
+void AUnitAIController::PreResetQueue() 
+{
+    Server_ResetMoveQueue();
+}
+
+void AUnitAIController::Server_ResetMoveQueue_Implementation() 
+{
+     UE_LOG(LogTemp, Warning, TEXT("ResetMoveQueue()"));
+     QueueNum = 0;
+     QueuedMovements.Empty();
+     Char->OwningPlayer->QueuedMovements.Empty();
+}
+
+bool AUnitAIController::Server_ResetMoveQueue_Validate()
+{
+     return true;
+}
+
+void AUnitAIController::SetHit(FHitResult& InHit, bool Aggressive) 
+{
+     UE_LOG(LogTemp, Warning, TEXT("Set hit to %f, %f, %f"), InHit.Location.X, InHit.Location.Y, InHit.Location.Z);
+     HitLoc = InHit;
+     Server_MoveTo(InHit, Aggressive);
 }
 
 void AUnitAIController::Tick(float DeltaSeconds)
@@ -236,13 +325,21 @@ void AUnitAIController::Tick(float DeltaSeconds)
           UE_LOG(LogTemp, Warning, TEXT("Char is null in AIController Tick"));
      }
 
+     // Queued movement arrival check
      if(GetPawn() != nullptr)
      {
           // Has some leniance
           if((HitLoc.Location.X >= (GetPawn()->GetActorLocation().X - 100) && HitLoc.Location.X <= (GetPawn()->GetActorLocation().X + 100)) && (HitLoc.Location.Y >= (GetPawn()->GetActorLocation().Y - 100) && HitLoc.Location.Y <= (GetPawn()->GetActorLocation().Y + 100)))
           {
                UE_LOG(LogTemp, Warning, TEXT("Arrived at destination Unit AI"));
-               Cast<ARTSPrototypeCharacter>(GetPawn())->OwningPlayer->NextMoveQueue();
+               if(Char->GetCharacterState() == ECharacterState::Aggressive)
+               {
+                    NextMoveQueue(true);
+               }
+               else
+               {
+                    NextMoveQueue(false);
+               }
           }
      }
 

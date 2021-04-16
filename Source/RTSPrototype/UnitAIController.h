@@ -33,10 +33,23 @@ public:
     UFUNCTION(Server, Reliable, WithValidation)
     void Server_GetAICharacter();
 
+    void SetPatroling(bool NewPatrol);
+
     FHitResult HitLoc;
 
+    UPROPERTY(replicated)
+    TArray<FHitResult> QueuedMovements{};
+
+    UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ResetMoveQueue();
+
+    void PreResetQueue();
+
+	// Place in queue
+	uint8 QueueNum = 0;
+
     // UFUNCITON(Server, Reliable, WithValidation)
-    void SetHit(FHitResult& InHit);
+    void SetHit(FHitResult& InHit, bool Aggressive);
 
     UPROPERTY(EditAnywhere)
     TSubclassOf<UAISense> SightSenseClass;
@@ -59,7 +72,15 @@ protected:
 
 private:
 
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_MoveTo(FHitResult Hit, bool Aggressive);
+
     FTimerHandle Timer;
+
+    void NextMoveQueue(bool Aggro);
+
+    UPROPERTY(replicated)
+    bool bPatroling;
 
     bool WithinRange();
 

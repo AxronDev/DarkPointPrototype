@@ -15,5 +15,6 @@ class RTSPROTOTYPE_API AUnitBuilding : public ABuilding
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BuildingPrice = 100;
 };

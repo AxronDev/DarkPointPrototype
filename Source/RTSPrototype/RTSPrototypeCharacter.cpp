@@ -127,6 +127,10 @@ FName ARTSPrototypeCharacter::GetOwnerUserName()
 void ARTSPrototypeCharacter::Server_ChangeCharacterState_Implementation(ECharacterState NewState) 
 {
 	CharacterState = NewState;
+	if(NewState == ECharacterState::Placed)
+	{
+		OnPlaced();
+	}
 }
 
 bool ARTSPrototypeCharacter::Server_ChangeCharacterState_Validate(ECharacterState NewState) 

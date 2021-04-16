@@ -38,6 +38,9 @@ protected:
 	UPROPERTY(BlueprintReadWrite)
 	FName BuildingType;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnPlaced();
+
 	UMaterial* TempGold;
 	UMaterial* TempUnit;
 

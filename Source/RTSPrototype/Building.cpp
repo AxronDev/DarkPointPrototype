@@ -58,8 +58,8 @@ void ABuilding::OnConstruction(const FTransform& Transform)
 	// Create Dynamic Instances
 	if (TempGold && TempUnit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Materials good in OnConstruction 2"));
-		UE_LOG(LogTemp, Warning, TEXT("OnConstruction Owner: %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
+		// UE_LOG(LogTemp, Warning, TEXT("Materials good in OnConstruction 2"));
+		// UE_LOG(LogTemp, Warning, TEXT("OnConstruction Owner: %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
 		UMaterialInstanceDynamic* GoldMat = UMaterialInstanceDynamic::Create(TempGold, this);
 		UMaterialInstanceDynamic* UnitMat = UMaterialInstanceDynamic::Create(TempUnit, this);
 		GoldMat->SetScalarParameterValue(FName("Transparency"), .5f);
@@ -80,7 +80,7 @@ void ABuilding::BeginPlay()
 
 void ABuilding::OnRep_Owner() 
 {
-	UE_LOG(LogTemp, Warning, TEXT("OnRep Owner %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
+	// UE_LOG(LogTemp, Warning, TEXT("OnRep Owner %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
 	
 	/* if (TempGold && TempUnit)
 	{
@@ -134,7 +134,7 @@ void ABuilding::Server_SetBuildingMaterials_Implementation(UMaterialInstanceDyna
 	// Create Dynamic Instances
 	if (Gold && Unit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Materials good in SetBuildingMaterials 3 %s"), NETMODE_WORLD);
+		// UE_LOG(LogTemp, Warning, TEXT("Materials good in SetBuildingMaterials 3 %s"), NETMODE_WORLD);
 		GoldBuildingMat = Gold;
 		UnitBuildingMat = Unit;
 	}
@@ -161,6 +161,11 @@ void ABuilding::Server_SetBuildingState_Implementation(EBuildingState NewState)
 	}
 	
 	BuildingState = NewState;
+
+	if(NewState == EBuildingState::Built)
+	{
+		OnPlaced();
+	}
 
 	if(GetBuildingType() == FName("Gold Building"))
 	{

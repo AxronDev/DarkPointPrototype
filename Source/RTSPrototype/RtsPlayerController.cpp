@@ -44,36 +44,13 @@ void ARtsPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> 
      DOREPLIFETIME(ARtsPlayerController, bAggressive);
      DOREPLIFETIME(ARtsPlayerController, bUnitButtons); 
      DOREPLIFETIME(ARtsPlayerController, bCanPosition);
+     DOREPLIFETIME(ARtsPlayerController, bPatrol);
+     DOREPLIFETIME(ARtsPlayerController, QueuedMovements);
 }
 
 FName ARtsPlayerController::GetUserName() 
 {
      return UserName;
-}
-
-void ARtsPlayerController::NextMoveQueue() 
-{
-     if(QueuedMovements.Num() == 0)
-          return;
-     if(QueueNum == (QueuedMovements.Num() - 1))
-     {
-          ResetMoveQueue();
-          return;
-     }
-     QueueNum++;
-     MoveToHit = QueuedMovements[QueueNum];
-     for(ARTSPrototypeCharacter* Unit : SelectedUnits)
-     {
-          Cast<AUnitAIController>(Unit->GetController())->SetHit(MoveToHit);
-          UE_LOG(LogTemp, Warning, TEXT("Set Hit"));
-     }
-     MoveTo();
-}
-
-void ARtsPlayerController::ResetMoveQueue() 
-{
-     QueueNum = 0;
-     QueuedMovements.Empty();
 }
 
 void ARtsPlayerController::Server_SetUsername_Implementation(const FName& NewUserName)
@@ -122,66 +99,112 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      {
           if(PlayerPawn->Units >= Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost)
           {
-               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true && bCanPosition == true)
+               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true)
                {
-                    bCanPosition = false;
-                    GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
-                    Server_BuyUnit(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost);
-                    Server_ChangePlayerState(EPlayerState::Default);
-                    if(PlacementBuffer->GetClass() == MeleeClass)
+                    Server_SetUnitState(Cast<ARTSPrototypeCharacter>(PlacementBuffer), ECharacterState::Placed);
+                    if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && bCanPosition == true)
                     {
-                         Server_CreateUnit(MeleeClass);
-                    }
-                    else if(PlacementBuffer->GetClass() == RangedClass)
-                    {
-                         Server_CreateUnit(RangedClass);
-                    }
-                    else if(PlacementBuffer->GetClass() == TankClass)
-                    {
-                         Server_CreateUnit(TankClass);
-                    }
-                    else if(PlacementBuffer->GetClass() == SpeedClass)
-                    {
-                         Server_CreateUnit(SpeedClass);
+                         bCanPosition = false;
+                         GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
+                         Server_BuyUnit(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost);
+                         Server_ChangePlayerState(EPlayerState::Default);
+                         if(PlacementBuffer->GetClass() == MeleeClass)
+                         {
+                              Server_CreateUnit(MeleeClass);
+                         }
+                         else if(PlacementBuffer->GetClass() == RangedClass)
+                         {
+                              Server_CreateUnit(RangedClass);
+                         }
+                         else if(PlacementBuffer->GetClass() == TankClass)
+                         {
+                              Server_CreateUnit(TankClass);
+                         }
+                         else if(PlacementBuffer->GetClass() == SpeedClass)
+                         {
+                              Server_CreateUnit(SpeedClass);
+                         }
                     }
                }
           }
      }
-
-     /* if(GetPawn() != nullptr && MoveToHit.bBlockingHit == true)
-     {
-          // Has some leniance
-          if((MoveToHit.Location.X >= (GetPawn()->GetActorLocation().X - 100) || MoveToHit.Location.X <= (GetPawn()->GetActorLocation().X + 100)) && (MoveToHit.Location.Y >= (GetPawn()->GetActorLocation().Y - 100) || MoveToHit.Location.Y <= (GetPawn()->GetActorLocation().Y + 100)))
-          {
-               UE_LOG(LogTemp, Warning, TEXT("Arrived at destination"));
-          }
-     }
- */
      ControlledPawn = GetPawn();
 }
 
-void ARtsPlayerController::MultiRightMouse() 
+void ARtsPlayerController::Server_MultiRightMouse_Implementation(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit) 
 {
-     if(SelectedUnits.Num() == 0)
+     if(Units.Num() == 0)
      {
           return;
      }
      UE_LOG(LogTemp, Warning, TEXT("Shift Right Click %i"), QueuedMovements.Num());
-     FHitResult Hit;
-     GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
      if(QueuedMovements.Num() == 0)
      {
-          MoveToHit = Hit;
-          UE_LOG(LogTemp, Warning, TEXT("First Move in sequence"));
-          MoveTo();
-     
-          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+          UE_LOG(LogTemp, Warning, TEXT("First move at %f, %f, %f"), Hit.Location.X, Hit.Location.Y, Hit.Location.Z);
+          if(bAggressive)
           {
-               Cast<AUnitAIController>(Unit->GetController())->SetHit(Hit);
-               UE_LOG(LogTemp, Warning, TEXT("Set Hit"));
+               for(ARTSPrototypeCharacter* Unit : Units)
+               {
+                    if(bPatrol)
+                    {
+                         UE_LOG(LogTemp, Warning, TEXT("MultiRight Patrol"));
+                         Cast<AUnitAIController>(Unit->GetController())->PreResetQueue();
+                         Cast<AUnitAIController>(Unit->GetController())->SetPatroling(true);
+                    }
+                    else
+                    {
+                         UE_LOG(LogTemp, Warning, TEXT("MultiRight non-patrol"));
+                         Cast<AUnitAIController>(Unit->GetController())->SetPatroling(false);
+                    }
+                    Cast<AUnitAIController>(Unit->GetController())->SetHit(Hit, true);
+               }
+          }
+          else
+          {
+               for(ARTSPrototypeCharacter* Unit : Units)
+               {
+                    UE_LOG(LogTemp, Warning, TEXT("MultiRight non-patrol"));
+                    Cast<AUnitAIController>(Unit->GetController())->SetPatroling(false);
+                    Cast<AUnitAIController>(Unit->GetController())->SetHit(Hit, false);
+                    UE_LOG(LogTemp, Warning, TEXT("First Move in sequence"));
+               }
           }
      }
+     for(ARTSPrototypeCharacter* Unit : Units)
+     {
+          Cast<AUnitAIController>(Unit->GetController())->QueuedMovements.Add(Hit);
+     }
      QueuedMovements.Add(Hit);
+}
+
+bool ARtsPlayerController::Server_MultiRightMouse_Validate(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit) 
+{
+     return true;
+}
+
+void ARtsPlayerController::Server_SinglePatrol_Implementation(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit) 
+{
+     FHitResult Start = Hit;
+     if(Hit.bBlockingHit)
+     {
+          for(ARTSPrototypeCharacter* Unit : Units)
+          {
+               Cast<AUnitAIController>(Unit->GetController())->PreResetQueue();
+               Cast<AUnitAIController>(Unit->GetController())->SetPatroling(true);
+               Cast<AUnitAIController>(Unit->GetController())->SetHit(Hit, true);
+               Start.Location = Unit->GetActorLocation();
+               UE_LOG(LogTemp, Warning, TEXT("Start loc of Patrol: %f, %f, %f"), Start.Location.X, Start.Location.Y, Start.Location.Z);
+               Cast<AUnitAIController>(Unit->GetController())->QueuedMovements.Add(Start);
+               Cast<AUnitAIController>(Unit->GetController())->QueuedMovements.Add(Hit);
+          }
+          QueuedMovements.Add(Start);
+          QueuedMovements.Add(Hit);
+     }
+}
+
+bool ARtsPlayerController::Server_SinglePatrol_Validate(const TArray<ARTSPrototypeCharacter*>& Units, FHitResult Hit) 
+{
+     return true;
 }
 
 void ARtsPlayerController::ShiftPress() 
@@ -192,6 +215,16 @@ void ARtsPlayerController::ShiftPress()
 void ARtsPlayerController::ShiftReleased() 
 {
      bIsShiftPress = false;
+}
+
+void ARtsPlayerController::Server_SetUnitState_Implementation(ARTSPrototypeCharacter* Unit, ECharacterState NewState) 
+{
+     Unit->Server_ChangeCharacterState(NewState);
+}
+
+bool ARtsPlayerController::Server_SetUnitState_Validate(ARTSPrototypeCharacter* Unit, ECharacterState NewState)
+{
+     return true;
 }
 
 void ARtsPlayerController::Server_SetBuildingState_Implementation(ABuilding* NewBuilding, EBuildingState NewState) 
@@ -208,6 +241,27 @@ bool ARtsPlayerController::Server_SetBuildingState_Validate(ABuilding* NewBuildi
 void ARtsPlayerController::CanPosition() 
 {
      bCanPosition = true;
+}
+
+// TODO Delete
+void ARtsPlayerController::StartPatrol(FHitResult First) 
+{
+     return;
+}
+
+void ARtsPlayerController::Server_InversePatrol_Implementation() 
+{
+     bPatrol = !bPatrol;
+     UE_LOG(LogTemp, Warning, TEXT("bPatrol changed to %s"), ( bPatrol ? TEXT("true") : TEXT("false") ));
+     if(bPatrol == true && bAggressive == false)
+     {
+          Server_SetAggression();
+     }
+}
+
+bool ARtsPlayerController::Server_InversePatrol_Validate()
+{
+     return true;
 }
 
 void ARtsPlayerController::Server_SetPlayerPawn_Implementation(ACameraPawn* Camera) 
@@ -290,6 +344,8 @@ void ARtsPlayerController::SetupInputComponent()
      InputComponent->BindAction("S", IE_Released, this, &ARtsPlayerController::SPress);
      InputComponent->BindAction("D", IE_Released, this, &ARtsPlayerController::DPress);
      InputComponent->BindAction("F", IE_Released, this, &ARtsPlayerController::FPress);
+
+     InputComponent->BindAction("P", IE_Released, this, &ARtsPlayerController::Server_InversePatrol);
      InputComponent->BindAction("AttackMovement", IE_Released, this, &ARtsPlayerController::Server_SetAggression);
      InputComponent->BindAction("Shift", IE_Pressed, this, &ARtsPlayerController::ShiftPress);
      InputComponent->BindAction("Shift", IE_Released, this, &ARtsPlayerController::ShiftReleased);
@@ -329,12 +385,12 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
           {
                if(bAggressive == true)
                {
-                    Unit->Server_ChangeCharacterState(ECharacterState::Aggressive);
+                    Server_SetUnitState(Unit , ECharacterState::Aggressive);
                     UE_LOG(LogTemp, Warning, TEXT("Attack"));
                }
                else 
                {
-                    Unit->Server_ChangeCharacterState(ECharacterState::Passive);
+                    Server_SetUnitState(Unit ,ECharacterState::Passive);
                     UE_LOG(LogTemp, Warning, TEXT("Passive"));
                }
                
@@ -376,6 +432,10 @@ void ARtsPlayerController::LeftMousePress()
      if(RTSPlayerState == EPlayerState::Menu) return;
      if(RTSPlayerState == EPlayerState::Default)
      {
+          if(bPatrol == true)
+          {
+               Server_InversePatrol();
+          }
           SelectionInitiate();
      }
      else
@@ -411,9 +471,7 @@ void ARtsPlayerController::LeftMousePress()
           {
                Server_ChangePlayerState(EPlayerState::Default);
           }
-          
-     }
-     
+     }     
 }
 
 void ARtsPlayerController::LeftMouseRelease() 
@@ -431,20 +489,31 @@ void ARtsPlayerController::RightMousePress()
      if(RTSPlayerState == EPlayerState::Menu) return;
      if(bIsShiftPress)
      {
-          MultiRightMouse();
+          FHitResult TempHit;
+          GetHitResultUnderCursor(ECC_GameTraceChannel2, false, TempHit);
+          // TODO LIne trace here not in server functions and pass in hit result
+          Server_MultiRightMouse(SelectedUnits, TempHit);
           return;
      }
-     QueueNum = 0;
-     QueuedMovements.Empty();
+     for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+     {
+          Cast<AUnitAIController>(Unit->GetController())->PreResetQueue();
+     }
+     if(bPatrol == true)
+     {
+          FHitResult TempHit;
+          GetHitResultUnderCursor(ECC_GameTraceChannel2, false, TempHit);
+          Server_SinglePatrol(SelectedUnits, TempHit);
+          return;
+     }
+     for(ARTSPrototypeCharacter* Unit : SelectedUnits)
+     {
+          Cast<AUnitAIController>(Unit->GetController())->PreResetQueue();
+     }
      UE_LOG(LogTemp, Warning, TEXT("RightClick"));
      if(RTSPlayerState == EPlayerState::Default)
      {
-          // MoveToHit = NULL;
           GetHitResultUnderCursor(ECC_GameTraceChannel2, false, MoveToHit);
-          for(ARTSPrototypeCharacter* Unit : SelectedUnits)
-          {
-               Cast<AUnitAIController>(Unit->GetController())->SetHit(MoveToHit);
-          }
           MoveTo();
      }
      else
@@ -646,6 +715,7 @@ void ARtsPlayerController::Server_CreateUnit_Implementation(TSubclassOf<ARTSProt
      AActor* NewUnit = GetWorld()->SpawnActor<ARTSPrototypeCharacter>(UnitClass, FVector(-3028.0f, -276.0f, 277.56f), FRotator(0.0f));
      if(NewUnit)
      {
+          Cast<APawn>(NewUnit)->GetController()->SetOwner(this);
           Cast<ARTSPrototypeCharacter>(NewUnit)->SetOwnerUserName(UserName);
           Cast<ARTSPrototypeCharacter>(NewUnit)->SetOwningPlayer(this);
           NewUnit->SetReplicates(true);
@@ -674,7 +744,6 @@ void ARtsPlayerController::Server_PositionPlacement_Implementation(FHitResult Hi
      } */
 
      // Placement Trace Channel
-     // GetHitResultUnderCursor(ECC_GameTraceChannel2, false, Hit);
      if(Cast<ARTSPrototypeCharacter>(UnitToPlace) != nullptr)
      {
           FString UnitName = GetDebugName(UnitToPlace);
