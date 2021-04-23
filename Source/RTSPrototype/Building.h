@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Placeable.h"
 #include "Building.generated.h"
 
 class UDecalComponent;
@@ -21,7 +22,7 @@ enum class EBuildingState : uint8
 };
 
 UCLASS()
-class RTSPROTOTYPE_API ABuilding : public AActor
+class RTSPROTOTYPE_API ABuilding : public AActor, public IPlaceable
 {
 	GENERATED_BODY()
 	
@@ -30,6 +31,15 @@ public:
 	ABuilding();
 
 	virtual void OnConstruction(const FTransform& Transform);
+
+	EPlaceableState PlaceableState;
+	virtual void SetPlaceableState(EPlaceableState NewState) override;
+	virtual EPlaceableState GetPlaceableState() override;
+	virtual TArray<bool>& GetAttackSlots() override;
+	virtual float GetRadius();
+	// Initialize in children
+	UPROPERTY(BlueprintReadWrite)
+	float Radius;
 
 protected:
 	// Called when the game starts or when spawned
@@ -94,7 +104,7 @@ public:
 	void SetOwnerUserName(FName UserName);
 
 	UFUNCTION(BlueprintCallable)
-	FName GetOwnerUserName();
+	virtual FName GetOwnerUserName() override;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;

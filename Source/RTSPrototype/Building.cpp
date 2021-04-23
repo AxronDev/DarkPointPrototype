@@ -71,6 +71,26 @@ void ABuilding::OnConstruction(const FTransform& Transform)
 	}
 }
 
+void ABuilding::SetPlaceableState(EPlaceableState NewState) 
+{
+	PlaceableState = NewState;
+}
+
+EPlaceableState ABuilding::GetPlaceableState() 
+{
+	return PlaceableState;
+}
+
+TArray<bool>& ABuilding::GetAttackSlots() 
+{
+	return AttackSlots;
+}
+
+float ABuilding::GetRadius() 
+{
+	return Radius;
+}
+
 // Called when the game starts or when spawned
 void ABuilding::BeginPlay()
 {
@@ -173,12 +193,14 @@ void ABuilding::Server_SetBuildingState_Implementation(EBuildingState NewState)
 		switch(NewState)
 		{
 			case EBuildingState::Preview :
-				// GoldBuildingMat->SetScalarParameterValue(FName("Transparency"), 0.5f);
+				SetPlaceableState(EPlaceableState::Preview);
 				break;
 			case EBuildingState::Built :
 				GoldBuildingMat->SetScalarParameterValue(FName("Transparency"), 1.0f);
+				SetPlaceableState(EPlaceableState::Placed);
 				break;
 			case EBuildingState::Destroyed :
+				SetPlaceableState(EPlaceableState::Destroyed);
 				break;
 		}
 	}
@@ -190,11 +212,14 @@ void ABuilding::Server_SetBuildingState_Implementation(EBuildingState NewState)
 		{
 			case EBuildingState::Preview :
 				// UnitBuildingMat->SetScalarParameterValue(FName("Transparency"), 0.5f);
+				SetPlaceableState(EPlaceableState::Preview);
 				break;
 			case EBuildingState::Built :
 				UnitBuildingMat->SetScalarParameterValue(FName("Transparency"), 1.f);
+				SetPlaceableState(EPlaceableState::Placed);
 				break;
 			case EBuildingState::Destroyed :
+				SetPlaceableState(EPlaceableState::Destroyed);
 				break;
 		}
 	}

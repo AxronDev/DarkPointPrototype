@@ -3,6 +3,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Placeable.h"
 #include "RTSPrototypeCharacter.generated.h"
 
 class AUnitAIController;
@@ -21,7 +22,7 @@ enum class ECharacterState : uint8
 };
 
 UCLASS(Blueprintable)
-class ARTSPrototypeCharacter : public ACharacter
+class ARTSPrototypeCharacter : public ACharacter, public IPlaceable
 {
 	GENERATED_BODY()
 
@@ -34,6 +35,12 @@ public:
 	virtual void BeginPlay();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const override;
+
+	EPlaceableState PlaceableState;
+	virtual void SetPlaceableState(EPlaceableState NewState) override;
+	virtual EPlaceableState GetPlaceableState() override;
+	virtual TArray<bool>& GetAttackSlots() override;
+	virtual float GetRadius();
 
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
@@ -63,7 +70,7 @@ public:
 	void SetOwnerUserName(FName UserName);
 
 	UFUNCTION(BlueprintCallable)
-	FName GetOwnerUserName();
+	virtual FName GetOwnerUserName() override;
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_ChangeCharacterState(ECharacterState NewState);
@@ -74,11 +81,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<bool> AttackSlots;
 
-    UPROPERTY(EditDefaultsOnly)
-    float DistToTarget = 25.f; // add 78 cm to desired value
+	// Initialize in children
+	UPROPERTY(BlueprintReadWrite)
+	float Radius;
 
     UPROPERTY(EditDefaultsOnly)
-    float AttackDist = 120.f;
+    float DistToTarget = -25.f; // Acceptance radius range modifier, should be negative
+
+    UPROPERTY(EditDefaultsOnly)
+    float AttackDist = 120.f; // How far their attack can reach
 
     UPROPERTY(EditDefaultsOnly)
     float AttackSpeed = 2.5f;

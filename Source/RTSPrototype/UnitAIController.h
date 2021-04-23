@@ -11,6 +11,7 @@ class UAISenseConfig_Sight;
 class UAISense;
 class UAIPerceptionComponent;
 struct FTimerHandle;
+class IPlaceable;
 
 /**
  * 
@@ -57,10 +58,10 @@ public:
     UPROPERTY(EditAnywhere)
     TSubclassOf<UAISense> NoneSenseClass;
 
-    TArray<ARTSPrototypeCharacter*> EnemyUnits;
+    TArray<IPlaceable*> EnemyUnits;
     // TArray<AActor*>& Actors;
     
-    ARTSPrototypeCharacter* Target;
+    IPlaceable* Target;
     
 protected:
     virtual void BeginPlay() override;

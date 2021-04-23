@@ -3,27 +3,32 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "UObject/Interface.h"
 #include "Placeable.generated.h"
 
-UCLASS()
-class RTSPROTOTYPE_API APlaceable : public AActor
+UENUM()
+enum class EPlaceableState : uint8
+{
+	Preview,
+	Placed,
+	Destroyed,
+};
+
+UINTERFACE(MinimalAPI)
+class UPlaceable : public UInterface
+{
+	GENERATED_BODY()
+};
+
+class RTSPROTOTYPE_API IPlaceable
 {
 	GENERATED_BODY()
 	
-public:	
-	// Sets default values for this actor's properties
-	APlaceable();
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditAnywhere)
-	uint8 Price = 0;
+public:
+	virtual void SetPlaceableState(EPlaceableState NewState) = 0;
+	virtual EPlaceableState GetPlaceableState() = 0;
+	virtual TArray<bool>& GetAttackSlots() = 0;
+	virtual FName GetOwnerUserName() = 0;
+	virtual float GetRadius() = 0;
 
 };

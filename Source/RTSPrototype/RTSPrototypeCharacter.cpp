@@ -86,6 +86,26 @@ void ARTSPrototypeCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ARTSPrototypeCharacter, OwningPlayer);
 }
 
+void ARTSPrototypeCharacter::SetPlaceableState(EPlaceableState NewState) 
+{
+	PlaceableState = NewState;
+}
+
+EPlaceableState ARTSPrototypeCharacter::GetPlaceableState() 
+{
+	return PlaceableState;
+}
+
+TArray<bool>& ARTSPrototypeCharacter::GetAttackSlots() 
+{
+	return AttackSlots;
+}
+
+float ARTSPrototypeCharacter::GetRadius() 
+{
+	return Radius;
+}
+
 void ARTSPrototypeCharacter::SetOwningPlayer(ARtsPlayerController* PlayerToSet) 
 {
 	OwningPlayer = PlayerToSet;
@@ -130,6 +150,15 @@ void ARTSPrototypeCharacter::Server_ChangeCharacterState_Implementation(ECharact
 	if(NewState == ECharacterState::Placed)
 	{
 		OnPlaced();
+		SetPlaceableState(EPlaceableState::Placed);
+	}
+	if(NewState == ECharacterState::Preview)
+	{
+		SetPlaceableState(EPlaceableState::Preview);
+	}
+	if(NewState == ECharacterState::Dead)
+	{
+		SetPlaceableState(EPlaceableState::Destroyed);
 	}
 }
 
