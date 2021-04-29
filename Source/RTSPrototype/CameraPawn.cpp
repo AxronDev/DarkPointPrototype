@@ -43,6 +43,11 @@ void ACameraPawn::BeginPlay()
 	
 }
 
+void ACameraPawn::SetXLocation(FVector Loc) 
+{
+	XLoc = Loc;
+}
+
 // Called every frame
 void ACameraPawn::Tick(float DeltaTime)
 {
@@ -56,6 +61,11 @@ void ACameraPawn::Tick(float DeltaTime)
 	//GetWorld()->GetFirstPlayerController()->SetName()
 
 	//AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Hosting"));
+
+	if(CursorToWorld)
+	{
+		CursorToWorld->SetWorldLocation(XLoc);
+	}
 }
 
 void ACameraPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLifetimeProps) const 
@@ -102,8 +112,14 @@ bool ACameraPawn::Server_AddUnitBuilding_Validate()
 
 void ACameraPawn::MouseMovement(float DeltaTime) 
 {
-	FVector MousePos{0,0,0};
+	FVector MousePos (0, 0, 0);
 	GetWorld()->GetGameInstance()->GetFirstLocalPlayerController()->GetMousePosition(MousePos.X, MousePos.Y);
+
+	if(MousePos.X == 0 && MousePos.Y == 0)
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Mouse Pos is Null"));
+		return;
+	}
 
 	int32 ViewSizeX;
 	int32 ViewSizeY;
@@ -122,13 +138,14 @@ void ACameraPawn::MouseMovement(float DeltaTime)
 	if(LocPercentX >= .95  || LocPercentX <= .05 || LocPercentY >= .95 || LocPercentY <= .05)
 	{
 		MoveDirection = MousePos.GetSafeNormal(.001);
-		//AddActorLocalOffset(DistanceToMove * FVector(-MoveDirection.Y, MoveDirection.X, MoveDirection.Z), true);
+		AddActorLocalOffset(DistanceToMove * FVector(-MoveDirection.Y, MoveDirection.X, MoveDirection.Z), true);
 	}
 }
 
 void ACameraPawn::Zoom(float value)
 {
-	value *= 2000;
-	//UE_LOG(LogTemp, Warning, TEXT("Zoom %f"), value);
+	value *= -50;
+	// UE_LOG(LogTemp, Warning, TEXT("Zoom %f"), value);
 	MoveDirection.Z = value;
+	// AddActorLocalOffset(MoveDirection, false);
 }

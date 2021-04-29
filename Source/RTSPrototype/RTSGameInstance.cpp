@@ -6,9 +6,15 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MenuSystem/MainMenu.h"
+#include "Input/Reply.h"
 #include "MenuSystem/PauseMenu.h"
 #include "RtsPlayerController.h"
 #include "Kismet/KismetSystemLibrary.h"
+#define NETMODE_WORLD (((GEngine == nullptr) || (GetWorld() == nullptr)) ? TEXT("") \
+: (GEngine->GetNetMode(GetWorld()) == NM_Client) ? TEXT("[Client] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_ListenServer) ? TEXT("[ListenServer] ") \
+: (GEngine->GetNetMode(GetWorld()) == NM_DedicatedServer) ? TEXT("[DedicatedServer] ") \
+: TEXT("[Standalone] "))
 
 URTSGameInstance::URTSGameInstance(const FObjectInitializer& ObjectInitializer) 
 {
@@ -93,7 +99,7 @@ void URTSGameInstance::Join(const FString& Address)
      }
      // Fix input mode
      FInputModeGameOnly InputModeData;
-     // InputModeData.SetConsumeCaptureMouseDown(false);
+     InputModeData.SetConsumeCaptureMouseDown(false);
      APlayerController* PlayerController = GetFirstLocalPlayerController();
      PlayerController->SetInputMode(InputModeData);
 
@@ -110,6 +116,7 @@ void URTSGameInstance::Join(const FString& Address)
 
      PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute, true);
      Cast<ARtsPlayerController>(PlayerController)->Server_ChangePlayerState(EPlayerState::Default);
+     UE_LOG(LogTemp, Warning, TEXT("Join called in Game Instance on: %s "), NETMODE_WORLD);
 }
 
 void URTSGameInstance::QuitSession() 

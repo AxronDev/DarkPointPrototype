@@ -38,6 +38,10 @@ public:
 	UPROPERTY(replicated)
 	UMaterialInstance* RedX;
 
+	void SetXLocation(FVector Loc);
+	
+	FVector XLoc;
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

@@ -97,32 +97,35 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
      }
      if(IsPressLeft == true)
      {
-          if(PlayerPawn->Units >= Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost)
+          if(PlacementBuffer)
           {
-               if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true)
+               if(PlayerPawn->Units >= Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost)
                {
-                    Server_SetUnitState(Cast<ARTSPrototypeCharacter>(PlacementBuffer), ECharacterState::Placed);
-                    if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && bCanPosition == true)
+                    if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasBeenPositioned == true)
                     {
-                         bCanPosition = false;
-                         GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
-                         Server_BuyUnit(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost);
-                         Server_ChangePlayerState(EPlayerState::Default);
-                         if(PlacementBuffer->GetClass() == MeleeClass)
+                         Server_SetUnitState(Cast<ARTSPrototypeCharacter>(PlacementBuffer), ECharacterState::Placed);
+                         if(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->bHasSpace == true && bCanPosition == true)
                          {
-                              Server_CreateUnit(MeleeClass);
-                         }
-                         else if(PlacementBuffer->GetClass() == RangedClass)
-                         {
-                              Server_CreateUnit(RangedClass);
-                         }
-                         else if(PlacementBuffer->GetClass() == TankClass)
-                         {
-                              Server_CreateUnit(TankClass);
-                         }
-                         else if(PlacementBuffer->GetClass() == SpeedClass)
-                         {
-                              Server_CreateUnit(SpeedClass);
+                              bCanPosition = false;
+                              GetWorldTimerManager().SetTimer(Timer, this, &ARtsPlayerController::CanPosition, .13f);
+                              Server_BuyUnit(Cast<ARTSPrototypeCharacter>(PlacementBuffer)->UnitCost);
+                              Server_ChangePlayerState(EPlayerState::Default);
+                              if(PlacementBuffer->GetClass() == MeleeClass)
+                              {
+                                   Server_CreateUnit(MeleeClass);
+                              }
+                              else if(PlacementBuffer->GetClass() == RangedClass)
+                              {
+                                   Server_CreateUnit(RangedClass);
+                              }
+                              else if(PlacementBuffer->GetClass() == TankClass)
+                              {
+                                   Server_CreateUnit(TankClass);
+                              }
+                              else if(PlacementBuffer->GetClass() == SpeedClass)
+                              {
+                                   Server_CreateUnit(SpeedClass);
+                              }
                          }
                     }
                }
@@ -358,6 +361,7 @@ void ARtsPlayerController::MoveTo()
           UE_LOG(LogTemp, Warning, TEXT("Attack"));
           PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->RedX);
           PlayerPawn->CursorToWorld->SetWorldLocation(MoveToHit.ImpactPoint);
+          PlayerPawn->SetXLocation(MoveToHit.ImpactPoint);
           PlayerPawn->CursorToWorld->SetVisibility(true);
      }
 
@@ -366,6 +370,7 @@ void ARtsPlayerController::MoveTo()
           UE_LOG(LogTemp, Warning, TEXT("Passive"));
           PlayerPawn->CursorToWorld->SetDecalMaterial(PlayerPawn->WhiteX);
           PlayerPawn->CursorToWorld->SetWorldLocation(MoveToHit.ImpactPoint);
+          PlayerPawn->SetXLocation(MoveToHit.ImpactPoint);
           PlayerPawn->CursorToWorld->SetVisibility(true);
      }
 
@@ -455,16 +460,30 @@ void ARtsPlayerController::LeftMousePress()
                {
                     UE_LOG(LogTemp, Warning, TEXT("Can Place Building"));
                     if(BuildingBuffer->GetBuildingType() == FName("Gold Building"))
-                         PlayerPawn->Gold -= PlayerPawn->GoldPrice;
+                    {
+                         if(PlayerPawn->Gold >= PlayerPawn->GoldPrice)
+                         {
+                              PlayerPawn->Gold -= PlayerPawn->GoldPrice;
+                              PlayerPawn->Server_AddGoldBuilding();
+                              Server_ChangePlayerState(EPlayerState::Default);
+                              Server_SetBuildingState(BuildingBuffer, EBuildingState::Built);
+                              BuildingBuffer->CursorToWorld->SetVisibility(false);
+                              return;
+                         }
+                    }
 
                     if(BuildingBuffer->GetBuildingType() == FName("Unit Building"))
-                         PlayerPawn->Gold -= PlayerPawn->UnitPrice;
-
-                    Server_ChangePlayerState(EPlayerState::Default);
-                    UE_LOG(LogTemp, Warning, TEXT("Calling Change state in left press %s"), NETMODE_WORLD);
-                    Server_SetBuildingState(BuildingBuffer, EBuildingState::Built);
-
-                    BuildingBuffer->CursorToWorld->SetVisibility(false);
+                    {
+                         if(PlayerPawn->Gold >= PlayerPawn->UnitPrice)
+                         {
+                              PlayerPawn->Gold -= PlayerPawn->UnitPrice;
+                              PlayerPawn->Server_AddUnitBuilding();
+                              Server_ChangePlayerState(EPlayerState::Default);
+                              Server_SetBuildingState(BuildingBuffer, EBuildingState::Built);
+                              BuildingBuffer->CursorToWorld->SetVisibility(false);
+                              return;
+                         }
+                    }                    
                }
           }
           else
@@ -623,6 +642,14 @@ void ARtsPlayerController::Server_CreateGoldBuilding_Implementation()
 
      if(PlayerPawn->Gold >= PlayerPawn->GoldPrice)
      {
+          // Removes previous placement if never placed
+          if(PlacementBuffer)
+          {
+               if(Cast<IPlaceable>(PlacementBuffer)->GetPlaceableState() == EPlaceableState::Preview)
+               {
+                    PlacementBuffer->Destroy();
+               }
+          }
           // UE_LOG(LogTemp, Warning, TEXT("Starting Spawning Building")) SpawnActorDeferred , FTransform(FRotator(.0f)), this
           PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(GoldBuildingClass);
           if(PlacementBuffer)
@@ -655,26 +682,29 @@ bool ARtsPlayerController::Server_CreateGoldBuilding_Validate()
 void ARtsPlayerController::Server_CreateUnitBuilding_Implementation() 
 {
      if(RTSPlayerState == EPlayerState::Menu) return;
-
-     if(PlayerPawn->Gold >= PlayerPawn->UnitPrice)
+     // Removes previous placement if never placed
+     if(PlacementBuffer)
      {
-          /* FActorSpawnParameters SpawnParams;
-          SpawnParams.Owner = this; , SpawnParams */
-          PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(UnitBuildingClass);
-          if(PlacementBuffer)
+          if(Cast<IPlaceable>(PlacementBuffer)->GetPlaceableState() == EPlaceableState::Preview)
           {
-               Cast<ABuilding>(PlacementBuffer)->SetOwner(this);
-               //UE_LOG(LogTemp, Warning, TEXT("Set Building Owner"))
-               Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
-               FString LogName;
-               UserName.ToString(LogName);
-               UE_LOG(LogTemp, Warning, TEXT("Username: %s create unit building %s"), *LogName, NETMODE_WORLD)
-               PlayerPawn->Server_AddUnitBuilding();
-               // Makes Tick call Server_PositionPlacement()
-               Server_ChangePlayerState(EPlayerState::Placing);
-               UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create unit %s"), NETMODE_WORLD);
-               Cast<ABuilding>(PlacementBuffer)->Server_SetBuildingState(EBuildingState::Preview);
+               PlacementBuffer->Destroy();
           }
+     }
+/* FActorSpawnParameters SpawnParams;
+     SpawnParams.Owner = this; , SpawnParams */
+     PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(UnitBuildingClass);
+     if(PlacementBuffer)
+     {
+          Cast<ABuilding>(PlacementBuffer)->SetOwner(this);
+          //UE_LOG(LogTemp, Warning, TEXT("Set Building Owner"))
+          Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
+          FString LogName;
+          UserName.ToString(LogName);
+          UE_LOG(LogTemp, Warning, TEXT("Username: %s create unit building %s"), *LogName, NETMODE_WORLD)
+          // Makes Tick call Server_PositionPlacement()
+          Server_ChangePlayerState(EPlayerState::Placing);
+          UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create unit %s"), NETMODE_WORLD);
+          Cast<ABuilding>(PlacementBuffer)->Server_SetBuildingState(EBuildingState::Preview);
      }
      else
      {
@@ -689,6 +719,15 @@ bool ARtsPlayerController::Server_CreateUnitBuilding_Validate()
 
 void ARtsPlayerController::PrepareUnit_Implementation(AActor* NewUnit) 
 {
+     // Removes previous placement if never placed
+     if(PlacementBuffer)
+     {
+          if(Cast<IPlaceable>(PlacementBuffer)->GetPlaceableState() == EPlaceableState::Preview)
+          {
+               PlacementBuffer->Destroy();
+          }
+     }
+
      PlacementBuffer = NewUnit;
      if(NewUnit != nullptr && Cast<ARTSPrototypeCharacter>(NewUnit) && PlacementBuffer == NewUnit)
      {
