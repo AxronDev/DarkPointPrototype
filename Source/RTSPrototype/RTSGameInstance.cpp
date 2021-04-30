@@ -87,7 +87,7 @@ void URTSGameInstance::Host()
      UWorld* World = GetWorld(); 
      if(!ensure(World)) return;
      Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, TEXT("Starting server travel"));
-     World->ServerTravel("/Game/TopDownCPP/Maps/TopDownExampleMap?listen");
+     World->ServerTravel("/Game/TopDownCPP/Maps/GenericMap?listen");
      Cast<ARtsPlayerController>(PlayerController)->Server_ChangePlayerState(EPlayerState::Default);
 }
 
