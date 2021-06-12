@@ -61,6 +61,8 @@ public:
     TArray<IPlaceable*> EnemyUnits;
     // TArray<AActor*>& Actors;
     
+    void SetTarget(IPlaceable* NewTarget);
+
     IPlaceable* Target;
     
 protected:

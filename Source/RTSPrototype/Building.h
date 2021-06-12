@@ -10,6 +10,7 @@
 class UDecalComponent;
 class USceneComponent;
 class UMaterialInstanceDynamic;
+class UMaterialInstance;
 class UAIPerceptionStimuliSourceComponent;
 class UAISense;
 
@@ -51,8 +52,9 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnPlaced();
 
-	UMaterial* TempGold;
-	UMaterial* TempUnit;
+	UMaterialInstance* TempGold;
+	UMaterialInstance* TempUnit;
+	UMaterialInstance* TempHealth;
 
 	virtual void OnRep_Owner() override;
 
@@ -64,6 +66,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	UMaterialInstanceDynamic* UnitBuildingMat;
+
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* HealthBuildingMat;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float MaxHealth = 500;
@@ -86,7 +91,7 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;
 
 	UFUNCTION(NetMulticast, Reliable, WithValidation)
-	void Server_SetBuildingMaterials(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit);
+	void Server_SetBuildingMaterials(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit, UMaterialInstanceDynamic* HealthMat);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDecalComponent* CursorToWorld;

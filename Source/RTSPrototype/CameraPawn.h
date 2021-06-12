@@ -9,6 +9,7 @@
 class ARTSPrototypeCharacter;
 class USceneComponent;
 class UDecalComponent;
+class ABuilding;
 
 UCLASS()
 class RTSPROTOTYPE_API ACameraPawn : public APawn
@@ -54,19 +55,29 @@ public:
 	void Server_AddGoldBuilding();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_AddUnitBuilding();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_AddHealthBuilding(ABuilding* New);
 
 	UPROPERTY(replicated)
 	TArray<AActor*> MyUnits;
+	UPROPERTY(replicated)
+	TArray<ABuilding*> MyHealthBuildings;
 
 	UPROPERTY(BlueprintReadOnly, replicated)
-	float Gold = 1000;
+	float Gold = 700;
 	UPROPERTY(BlueprintReadOnly, replicated)
 	float Units;
+	UPROPERTY(BlueprintReadOnly, replicated)
+	float TotalHealth = 500;
+
+	float TempHealth = 0;
 
 	UPROPERTY(EditAnywhere)
 	float GoldPrice = 150.f;
 	UPROPERTY(EditAnywhere)
 	float UnitPrice = 100.f;
+	UPROPERTY(EditAnywhere)
+	float HealthPrice = 350.f;
 
 private:
 
@@ -82,6 +93,8 @@ private:
 	int32 GoldBuildings = 1;
 	UPROPERTY(replicated)
 	int32 UnitBuildings = 0;
+	UPROPERTY(replicated)
+	int32 HealthBuildings = 0;
 
 	float GoldRate = 3.f;
 	float UnitRate = .5f;

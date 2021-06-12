@@ -92,7 +92,7 @@ void ARtsPlayerController::PlayerTick(float DeltaTime)
           FHitResult HitPlacement;
           GetHitResultUnderCursor(ECC_GameTraceChannel2, false, HitPlacement);
 
-          // Update building location
+          // Update placement location
           Server_PositionPlacement(HitPlacement, PlacementBuffer);
      }
      if(IsPressLeft == true)
@@ -341,6 +341,7 @@ void ARtsPlayerController::SetupInputComponent()
 
      InputComponent->BindAction("BuildGoldProduction", IE_Released, this, &ARtsPlayerController::Server_CreateGoldBuilding);
      InputComponent->BindAction("BuildUnitProduction", IE_Released, this, &ARtsPlayerController::Server_CreateUnitBuilding);
+     InputComponent->BindAction("BuildHealthBuilding", IE_Released, this, &ARtsPlayerController::Server_CreateHealthBuilding);
 
      InputComponent->BindAction("UnitModifier", IE_Released, this, &ARtsPlayerController::UnitModifierButtons);
      InputComponent->BindAction("A", IE_Released, this, &ARtsPlayerController::APress);
@@ -382,6 +383,13 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
 
      UE_LOG(LogTemp, Warning, TEXT("MoveTo called"));
 
+     bool IsUnit = false;
+     UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *GetDebugName(Hit.GetActor()));
+     if(Cast<IPlaceable>(Hit.GetActor()))
+     {
+          IsUnit = true;
+     }
+
 	if (Hit.bBlockingHit)
 	{
           UE_LOG(LogTemp, Warning, TEXT("Hit Something at X: %f Y: %f Z: %f"), Hit.ImpactPoint.X, Hit.ImpactPoint.Y, Hit.ImpactPoint.Z);
@@ -406,8 +414,23 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
                     UE_LOG(LogTemp, Warning, TEXT("Attained unit controller %s"), *UnitName);
                     if(HasAuthority())
                     {
-                         UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
-                         UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
+                         if(IsUnit == true)
+                         {
+                              UAIBlueprintHelperLibrary::SimpleMoveToActor(Unit->GetController(), Hit.GetActor());
+                              UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToACTOR called in Server MoveTo"));
+                              if(bAggressive == true)
+                              {
+                                   for(auto TempUnit : SelectedUnits)
+                                   {
+                                        Cast<AUnitAIController>(TempUnit->GetController())->SetTarget(Cast<IPlaceable>(Hit.GetActor()));
+                                   }
+                              }
+                         }
+                         else
+                         {
+                              UAIBlueprintHelperLibrary::SimpleMoveToLocation(Unit->GetController(), Hit.ImpactPoint);
+                              UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLOCATION called in Server MoveTo"));
+                         }
                     }
                }
                else
@@ -415,13 +438,7 @@ void ARtsPlayerController::Server_MoveTo_Implementation(FHitResult Hit, const TA
                     UE_LOG(LogTemp, Warning, TEXT("Failed to get unit controller"));
                }            
           }
-	}/* 
-     if(UnitChar && UnitController)
-     {
-          UE_LOG(LogTemp, Warning, TEXT("SimpleMoveToLocation called in Server MoveTo"));
-          UAIBlueprintHelperLibrary::SimpleMoveToLocation(UnitChar->GetController(), HitResult.ImpactPoint);
-     } */
-
+	}
      // reset to passive
      bAggressive = false;
 }
@@ -483,7 +500,20 @@ void ARtsPlayerController::LeftMousePress()
                               BuildingBuffer->CursorToWorld->SetVisibility(false);
                               return;
                          }
-                    }                    
+                    }
+
+                    if(BuildingBuffer->GetBuildingType() == FName("Health Building"))
+                    {
+                         if(PlayerPawn->Gold >= PlayerPawn->HealthPrice)
+                         {
+                              PlayerPawn->Gold -= PlayerPawn->HealthPrice;
+                              PlayerPawn->Server_AddHealthBuilding(Cast<ABuilding>(PlacementBuffer));
+                              Server_ChangePlayerState(EPlayerState::Default);
+                              Server_SetBuildingState(BuildingBuffer, EBuildingState::Built);
+                              BuildingBuffer->CursorToWorld->SetVisibility(false);
+                              return;
+                         }
+                    }                  
                }
           }
           else
@@ -532,7 +562,7 @@ void ARtsPlayerController::RightMousePress()
      UE_LOG(LogTemp, Warning, TEXT("RightClick"));
      if(RTSPlayerState == EPlayerState::Default)
      {
-          GetHitResultUnderCursor(ECC_GameTraceChannel2, false, MoveToHit);
+          GetHitResultUnderCursor(ECC_GameTraceChannel4, false, MoveToHit);
           MoveTo();
      }
      else
@@ -557,6 +587,47 @@ void ARtsPlayerController::SelectionInitiate()
 void ARtsPlayerController::SelectionTerminate()
 {
      HUD->SelectPressed = false;
+}
+
+void ARtsPlayerController::Server_CreateHealthBuilding_Implementation() 
+{
+     if(RTSPlayerState == EPlayerState::Menu) return;
+
+     if(PlayerPawn->Gold >= PlayerPawn->HealthPrice)
+     {
+          // Removes previous placement if never placed
+          if(PlacementBuffer)
+          {
+               if(Cast<IPlaceable>(PlacementBuffer)->GetPlaceableState() == EPlaceableState::Preview)
+               {
+                    PlacementBuffer->Destroy();
+               }
+          }
+          // UE_LOG(LogTemp, Warning, TEXT("Starting Spawning Building")) SpawnActorDeferred , FTransform(FRotator(.0f)), this
+          PlacementBuffer = GetWorld()->SpawnActor<ABuilding>(HealthBuildingClass);
+          if(PlacementBuffer)
+          {
+               // Cast<ABuilding>(PlacementBuffer)->SetOwner(this);
+               // UE_LOG(LogTemp, Warning, TEXT("Set Building Owner"))
+               // UE_LOG(LogTemp, Warning, TEXT("CreatGoldBuilding Owner: %s on %s"), *GetDebugName(PlacementBuffer->GetOwner()), NETMODE_WORLD);
+               // UGameplayStatics::FinishSpawningActor(PlacementBuffer, FTransform(FRotator(.0f)));
+               // UE_LOG(LogTemp, Warning, TEXT("Finished Spawning Building"))
+               Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
+               // Makes Tick call Server_PositionPlacement()
+               Server_ChangePlayerState(EPlayerState::Placing);
+               UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create health %s"), NETMODE_WORLD);
+               Cast<ABuilding>(PlacementBuffer)->Server_SetBuildingState(EBuildingState::Preview);
+          }
+     }
+     else
+     {
+          Server_ChangePlayerState(EPlayerState::Default);
+     }
+}
+
+bool ARtsPlayerController::Server_CreateHealthBuilding_Validate()
+{
+     return true;
 }
 
 void ARtsPlayerController::Server_DestroyUnit_Implementation() 
@@ -660,7 +731,6 @@ void ARtsPlayerController::Server_CreateGoldBuilding_Implementation()
                // UGameplayStatics::FinishSpawningActor(PlacementBuffer, FTransform(FRotator(.0f)));
                // UE_LOG(LogTemp, Warning, TEXT("Finished Spawning Building"))
                Cast<ABuilding>(PlacementBuffer)->SetOwnerUserName(UserName);
-               PlayerPawn->Server_AddGoldBuilding();
                // Makes Tick call Server_PositionPlacement()
                Server_ChangePlayerState(EPlayerState::Placing);
                UE_LOG(LogTemp, Warning, TEXT("Calling Change building state in create gold %s"), NETMODE_WORLD);
@@ -770,22 +840,13 @@ bool ARtsPlayerController::Server_CreateUnit_Validate(TSubclassOf<ARTSPrototypeC
      return true;
 }
 
+// TODO Make this call only on client from tick then once on server after placement is confirmed
 void ARtsPlayerController::Server_PositionPlacement_Implementation(FHitResult HitRes, AActor* UnitToPlace) 
 {
-     /* if(UnitToPlace)
-     {
-          UE_LOG(LogTemp, Warning, TEXT("UnitToPlace GOOD PositionPlacement() "), NETMODE_WORLD);
-     }
-     else
-     {
-          UE_LOG(LogTemp, Warning, TEXT("UnitToPlace BAD PositionPlacement() "), NETMODE_WORLD);
-          return;
-     } */
-
      // Placement Trace Channel
      if(Cast<ARTSPrototypeCharacter>(UnitToPlace) != nullptr)
      {
-          FString UnitName = GetDebugName(UnitToPlace);
+          // FString UnitName = GetDebugName(UnitToPlace);
           // UE_LOG(LogTemp, Warning, TEXT("Unit Buffer in PositionPlacement: %s  %s"), *UnitName, NETMODE_WORLD);
           HitRes.Location.Z += 100.f;
           Cast<ARTSPrototypeCharacter>(UnitToPlace)->bHasBeenPositioned = true;

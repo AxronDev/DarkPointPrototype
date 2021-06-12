@@ -143,13 +143,19 @@ private:
 	UPROPERTY(replicated)
 	AActor* PlacementBuffer;
 
+	// Server Create Buildings / Units
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_CreateGoldBuilding();
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_CreateUnitBuilding();
 
 	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_CreateHealthBuilding();
+
+	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_CreateUnit(TSubclassOf<ARTSPrototypeCharacter> UnitClass);
+
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_BuyUnit(uint8 UnitCost);
@@ -167,6 +173,8 @@ private:
 	TSubclassOf<ABuilding> GoldBuildingClass;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ABuilding> UnitBuildingClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ABuilding> HealthBuildingClass;
 
 	void UnitModifierButtons();
 	void APress();

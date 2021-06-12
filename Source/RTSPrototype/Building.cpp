@@ -36,14 +36,16 @@ ABuilding::ABuilding()
 	CursorToWorld->DecalSize = FVector(300.0f, 300.0f, 300.0f);
 	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
 
-	// Get materials
-	static ConstructorHelpers::FObjectFinder<UMaterial> GoldBuildingMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Concrete_Tiles.M_Concrete_Tiles'"));
-	static ConstructorHelpers::FObjectFinder<UMaterial> UnitBuildingMaterial(TEXT("Material'/Game/StarterContent/Materials/M_Brick_Clay_Beveled.M_Brick_Clay_Beveled'"));
-	
-	if (GoldBuildingMaterial.Succeeded() && UnitBuildingMaterial.Succeeded())
+	// Get materials 
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> GoldBuildingMaterial(TEXT("MaterialInstance'/Game/beffio/Medieval_Kingdom/Content/Materials/Materials_Instances/Buildings/MI_Building_22.MI_Building_22'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> UnitBuildingMaterial(TEXT("MaterialInstance'/Game/beffio/Medieval_Kingdom/Content/Materials/Materials_Instances/Buildings/MI_Building_15.MI_Building_15'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> HealthBuildingMaterial(TEXT("MaterialInstance'/Game/beffio/Medieval_Kingdom/Content/Materials/Materials_Instances/Buildings/MI_Building_11.MI_Building_11'"));
+
+	if (GoldBuildingMaterial.Succeeded() && UnitBuildingMaterial.Succeeded() && HealthBuildingMaterial.Succeeded())
 	{
 		TempGold = GoldBuildingMaterial.Object;
 		TempUnit = UnitBuildingMaterial.Object;
+		TempHealth = HealthBuildingMaterial.Object;
 		UE_LOG(LogTemp, Warning, TEXT("Materials found in constructor 1"));
 	}
 
@@ -56,18 +58,21 @@ void ABuilding::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 
 	// Create Dynamic Instances
-	if (TempGold && TempUnit)
+	if (TempGold && TempUnit && TempHealth)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("Materials good in OnConstruction 2"));
 		// UE_LOG(LogTemp, Warning, TEXT("OnConstruction Owner: %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
 		UMaterialInstanceDynamic* GoldMat = UMaterialInstanceDynamic::Create(TempGold, this);
 		UMaterialInstanceDynamic* UnitMat = UMaterialInstanceDynamic::Create(TempUnit, this);
-		GoldMat->SetScalarParameterValue(FName("Transparency"), .5f);
+		UMaterialInstanceDynamic* HealthMat = UMaterialInstanceDynamic::Create(TempHealth, this);
+		GoldMat->SetScalarParameterValue(FName("Transparency"), .5f); //Transparency
 		UnitMat->SetScalarParameterValue(FName("Transparency"), .5f);
+		HealthMat->SetScalarParameterValue(FName("Transparency"), .5f);
 
 		GoldBuildingMat = GoldMat;
 		UnitBuildingMat = UnitMat;
-		Server_SetBuildingMaterials(GoldMat, UnitMat);
+		HealthBuildingMat = HealthMat;
+		Server_SetBuildingMaterials(GoldMat, UnitMat, HealthMat);
 	}
 }
 
@@ -100,20 +105,7 @@ void ABuilding::BeginPlay()
 
 void ABuilding::OnRep_Owner() 
 {
-	// UE_LOG(LogTemp, Warning, TEXT("OnRep Owner %s on %s"), *GetDebugName(GetOwner()), NETMODE_WORLD);
-	
-	/* if (TempGold && TempUnit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Materials good in OnRep"));
-		UMaterialInstanceDynamic* GoldMat = UMaterialInstanceDynamic::Create(TempGold, this);
-		UMaterialInstanceDynamic* UnitMat = UMaterialInstanceDynamic::Create(TempUnit, this);
-		GoldMat->SetScalarParameterValue(FName("Transparency"), .5f);
-		UnitMat->SetScalarParameterValue(FName("Transparency"), .5f);
-
-		GoldBuildingMat = GoldMat;
-		UnitBuildingMat = UnitMat;
-		Server_SetBuildingMaterials(GoldMat, UnitMat);
-	} */
+	return;
 }
 
 // Called every frame
@@ -144,36 +136,42 @@ float ABuilding::TakeDamage(float DamageAmount, struct FDamageEvent const & Dama
 	if(Health <= 0)
 	{
 		DamageDealt = DamageDealt - Health;
+		Server_SetBuildingState(EBuildingState::Destroyed);
 		Server_Death();
 	}
 	return DamageDealt;
 }
 
-void ABuilding::Server_SetBuildingMaterials_Implementation(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit) 
+void ABuilding::Server_SetBuildingMaterials_Implementation(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit, UMaterialInstanceDynamic* HealthMat) 
 {
 	// Create Dynamic Instances
-	if (Gold && Unit)
+	if (Gold && Unit && HealthMat)
 	{
 		// UE_LOG(LogTemp, Warning, TEXT("Materials good in SetBuildingMaterials 3 %s"), NETMODE_WORLD);
 		GoldBuildingMat = Gold;
 		UnitBuildingMat = Unit;
+		HealthBuildingMat = HealthMat;
 	}
 }
 
-bool ABuilding::Server_SetBuildingMaterials_Validate(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit) 
+bool ABuilding::Server_SetBuildingMaterials_Validate(UMaterialInstanceDynamic* Gold, UMaterialInstanceDynamic* Unit, UMaterialInstanceDynamic* HealthMat) 
 {
 	return true;
 }
 
 void ABuilding::Server_SetBuildingState_Implementation(EBuildingState NewState) 
 {	
-	if(!GoldBuildingMat || !UnitBuildingMat)
+	if(!GoldBuildingMat || !UnitBuildingMat || !HealthBuildingMat)
 	{
 		if(!UnitBuildingMat)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Unit building mat is NULL %s"), NETMODE_WORLD);
 		}
 		if(!GoldBuildingMat)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Gold building mat is NULL %s"), NETMODE_WORLD);
+		}
+		if(!HealthBuildingMat)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Gold building mat is NULL %s"), NETMODE_WORLD);
 		}
@@ -216,6 +214,25 @@ void ABuilding::Server_SetBuildingState_Implementation(EBuildingState NewState)
 				break;
 			case EBuildingState::Built :
 				UnitBuildingMat->SetScalarParameterValue(FName("Transparency"), 1.f);
+				SetPlaceableState(EPlaceableState::Placed);
+				break;
+			case EBuildingState::Destroyed :
+				SetPlaceableState(EPlaceableState::Destroyed);
+				break;
+		}
+	}
+
+	else if(GetBuildingType() == FName("Health Building"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Change health building state %s"), NETMODE_WORLD);
+		switch(NewState)
+		{
+			case EBuildingState::Preview :
+				// UnitBuildingMat->SetScalarParameterValue(FName("Transparency"), 0.5f);
+				SetPlaceableState(EPlaceableState::Preview);
+				break;
+			case EBuildingState::Built :
+				HealthBuildingMat->SetScalarParameterValue(FName("Transparency"), 1.f);
 				SetPlaceableState(EPlaceableState::Placed);
 				break;
 			case EBuildingState::Destroyed :

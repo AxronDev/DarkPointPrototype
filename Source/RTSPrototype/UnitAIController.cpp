@@ -147,27 +147,32 @@ void AUnitAIController::AssignTarget()
           {
                for(uint8 UnitIndex = 0; UnitIndex < EnemyUnits.Num(); UnitIndex++)
                {
-                    // Check if attack slot is empty
-                    if((EnemyUnits[UnitIndex]->GetAttackSlots())[Slot] == false)
+                    UE_LOG(LogTemp, Warning, TEXT("Enemy units array size %i"), EnemyUnits.Num());
+                    if(EnemyUnits[UnitIndex] != nullptr)
                     {
-                         if(EnemyUnits[UnitIndex])
+                         UE_LOG(LogTemp, Warning, TEXT("Bruh"));
+                         // Check if attack slot is empty
+                         if((EnemyUnits[UnitIndex]->GetAttackSlots())[Slot] == false)
                          {
-                              // Set slot to taken and assign Target
-                              (EnemyUnits[UnitIndex]->GetAttackSlots())[Slot] = true;
-                              Target = EnemyUnits[UnitIndex];
-                              UE_LOG(LogTemp, Warning, TEXT("Cast Succeded AssignTarget"));
-                              // End looking for target
-                              Slot = (Char->GetAttackSlots()).Num();
-                              UnitIndex = EnemyUnits.Num();
+                              if(EnemyUnits[UnitIndex])
+                              {
+                                   // Set slot to taken and assign Target
+                                   (EnemyUnits[UnitIndex]->GetAttackSlots())[Slot] = true;
+                                   Target = EnemyUnits[UnitIndex];
+                                   UE_LOG(LogTemp, Warning, TEXT("Cast Succeded AssignTarget"));
+                                   // End looking for target
+                                   Slot = (Char->GetAttackSlots()).Num();
+                                   UnitIndex = EnemyUnits.Num();
+                              }
+                              else
+                              {
+                                   UE_LOG(LogTemp, Warning, TEXT("Cast Failed AssignTarget"));
+                              }
                          }
-                         else
-                         {
-                              UE_LOG(LogTemp, Warning, TEXT("Cast Failed AssignTarget"));
-                         }
+                         /* FString UnitName = GetDebugName(units);
+                         FString Auth;    
+                         UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName); */
                     }
-                    /* FString UnitName = GetDebugName(units);
-                    FString Auth;    
-                    UE_LOG(LogTemp, Warning, TEXT("Can see unit controller %s"), *UnitName); */
                }
           }
      }
@@ -290,15 +295,30 @@ void AUnitAIController::SetHit(FHitResult& InHit, bool Aggressive)
      Server_MoveTo(InHit, Aggressive);
 }
 
+void AUnitAIController::SetTarget(IPlaceable* NewTarget) 
+{
+    Target = NewTarget;
+    EnemyUnits.Add(NewTarget);
+}
+
 void AUnitAIController::Tick(float DeltaSeconds)
 {
      Super::Tick(DeltaSeconds);
-
+     if(Char->GetCharacterState() == ECharacterState::Dead) return;
      if(Char)
      {
           if(Char->GetCharacterState() == ECharacterState::Aggressive)
           {
-               if(Target == nullptr || EnemyUnits.Find(Target) == INDEX_NONE || Target->GetPlaceableState() == EPlaceableState::Destroyed)
+               if(!Target)
+               {
+                    TArray<AActor*> Actors{};
+                    for(uint8 i = 0; i < Actors.Num(); i++)
+                    {
+                         Actors[i] = Cast<AActor>(EnemyUnits[i]);
+                    }
+                    SortEnemyObjects(Actors);
+               }
+               else if(EnemyUnits.Find(Target) == INDEX_NONE || Target->GetPlaceableState() == EPlaceableState::Destroyed)
                {
                     TArray<AActor*> Actors{};
                     for(uint8 i = 0; i < Actors.Num(); i++)
@@ -311,6 +331,18 @@ void AUnitAIController::Tick(float DeltaSeconds)
                {
                     float AcceptanceRadius = /* Char->GetRadius() + */ Target->GetRadius() + Char->DistToTarget + Char->AttackDist;
                     UE_LOG(LogTemp, Warning, TEXT("MoveTo Acceptance Radius %f"), AcceptanceRadius + Char->GetRadius());
+                    switch(Target->GetPlaceableState())
+                    {
+                         case EPlaceableState::Destroyed:
+                              UE_LOG(LogTemp, Warning, TEXT("Target Destroyed"));
+                              break;
+                         case EPlaceableState::Preview:
+                              UE_LOG(LogTemp, Warning, TEXT("Target Preview"));
+                              break;
+                         case EPlaceableState::Placed:
+                              UE_LOG(LogTemp, Warning, TEXT("Target Placed"));
+                              break;
+                    }
                     MoveToActor(Cast<AActor>(Target), AcceptanceRadius, true, true, true);
                     
                     if(WithinRange())

@@ -4,6 +4,7 @@
 #include "CameraPawn.h"
 #include "RtsPlayerController.h"
 #include "Components/SceneComponent.h"
+#include "Building.h"
 #include "Components/DecalComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -55,8 +56,34 @@ void ACameraPawn::Tick(float DeltaTime)
 
 	MouseMovement(DeltaTime);
 
+	// Deal with stats
 	Gold += GoldBuildings * (DeltaTime * GoldRate);
 	Units += UnitBuildings * (DeltaTime * UnitRate);
+	TotalHealth = 0;
+	for(ABuilding* Health : MyHealthBuildings)
+	{
+		if(Health)
+		{
+			TotalHealth += Health->GetHealth();
+		}
+		else
+		{
+			MyHealthBuildings.Remove(Health);
+		}
+	}
+
+	if(TotalHealth != TempHealth)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Health: %f"), TotalHealth);
+	}
+
+	TempHealth = TotalHealth;
+
+	if(TotalHealth == 0)
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Game over, %s lost"), *GetDebugName(this));
+		// Lost();
+	}
 
 	//GetWorld()->GetFirstPlayerController()->SetName()
 
@@ -75,9 +102,10 @@ void ACameraPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty> & OutLife
 	DOREPLIFETIME(ACameraPawn, Units);
 	DOREPLIFETIME(ACameraPawn, GoldBuildings);
 	DOREPLIFETIME(ACameraPawn, UnitBuildings);
+	DOREPLIFETIME(ACameraPawn, HealthBuildings); 
 	DOREPLIFETIME(ACameraPawn, MyUnits);
      DOREPLIFETIME(ACameraPawn, WhiteX); 
-     DOREPLIFETIME(ACameraPawn, RedX); 
+     DOREPLIFETIME(ACameraPawn, RedX);
 }
 
 // Called to bind functionality to input
@@ -85,6 +113,21 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
      InputComponent->BindAxis("Zoom", this, &ACameraPawn::Zoom);
+}
+
+void ACameraPawn::Server_AddHealthBuilding_Implementation(ABuilding* New) 
+{
+	if(New)
+	{
+		MyHealthBuildings.Add(New);
+		HealthBuildings++;
+		UE_LOG(LogTemp, Warning, TEXT("Health Buildings: %i"), HealthBuildings);
+	}
+}
+
+bool ACameraPawn::Server_AddHealthBuilding_Validate(ABuilding* New) 
+{
+	return true;
 }
 
 void ACameraPawn::Server_AddGoldBuilding_Implementation()
