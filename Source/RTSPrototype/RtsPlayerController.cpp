@@ -301,16 +301,101 @@ bool ARtsPlayerController::Server_SetAggression_Validate()
 
 void ARtsPlayerController::BeginPlay()
 {
+     ACameraPawn* CamPawn;
      HUD = Cast<AGameHUD>(GetHUD());
 
      BuildingSpawnParams.Owner = Cast<AActor>(GetPawn());
 
      RTSPlayerState = EPlayerState::Default;
 
+     CamPawn = GetPawn<ACameraPawn>();
+     Server_SetPlayerPawn(CamPawn);
+
      // PlayerPawn = Cast<ACameraPawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 
-     UE_LOG(LogTemp, Warning, TEXT("PlayerController made %s"), NETMODE_WORLD);
-     if(HasAuthority())
+     /* UE_LOG(LogTemp, Warning, TEXT("PlayerController made %s"), NETMODE_WORLD);
+     bool NameSet = false;
+     bool NameTaken = false;
+     for(int n = 0; n < 3; n++)
+     {
+          FName NameToSet;
+          switch(n)
+          {
+               case 0:
+                    NameToSet = FName("Host");
+                    break;
+               case 1:
+                    NameToSet = FName("Aaron");
+                    break;
+               case 2:
+                    NameToSet = FName("Josh");
+                    break;
+          }
+          if(NameSet == false)
+          {
+               for(int i = 0; i < GetWorld()->GetNumPlayerControllers(); i++)
+               {
+                    if(NameTaken == false)
+                    {
+                         ARtsPlayerController *PC = Cast<ARtsPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), i));
+                         if(PC)
+                         {
+                              if(NameToSet != PC->GetUserName())
+                              {
+                                   if(i == (GetWorld()->GetNumPlayerControllers()) - 1)
+                                   {
+                                        NameSet = true;
+                                        Server_SetUsername(NameToSet);
+                                   }
+                              }
+                              else
+                              {
+                                   NameTaken = true;
+                              }
+                         }
+                    }
+               }
+          }
+          else
+          {
+               CamPawn = GetPawn<ACameraPawn>();
+               Server_SetPlayerPawn(CamPawn);
+          }
+     } */
+
+     /* for(int i = 0; i < GetWorld()->GetNumPlayerControllers(); i++)
+     {
+          UE_LOG(LogTemp, Warning, TEXT("Player Controller num: %i"), GetWorld()->GetNumPlayerControllers());
+          if(Cast<ARtsPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), i)) == this)
+          {
+               switch(i)
+               {
+                    case 0:
+                         Server_SetUsername(FName("Host"));
+                         if(GetPawn<ACameraPawn>())
+                         {
+                              UE_LOG(LogTemp, Warning, TEXT("Got Pawn with auth %s"), NETMODE_WORLD);
+                              PlayerPawn = GetPawn<ACameraPawn>();
+                         }
+                         else
+                         {
+                              UE_LOG(LogTemp, Warning, TEXT("Failed to get Pawn with auth %s"), NETMODE_WORLD);
+                         }
+                         break;
+                    case 1:
+                         Server_SetUsername(FName("Aaron"));
+                         CamPawn = GetPawn<ACameraPawn>();
+                         Server_SetPlayerPawn(CamPawn);
+                         break;
+                    case 2:
+                         Server_SetUsername(FName("Josh"));
+                         CamPawn = GetPawn<ACameraPawn>();
+                         Server_SetPlayerPawn(CamPawn);
+                         break;
+               }
+          }
+     } */
+     /* if(HasAuthority())
      {
           Server_SetUsername(FName("Axron"));
           if(GetPawn<ACameraPawn>())
@@ -328,7 +413,7 @@ void ARtsPlayerController::BeginPlay()
           Server_SetUsername(FName("Josh"));
           ACameraPawn* CamPawn = GetPawn<ACameraPawn>();
           Server_SetPlayerPawn(CamPawn);
-     }
+     } */
 }
 
 void ARtsPlayerController::SetupInputComponent()

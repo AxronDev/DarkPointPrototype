@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MenuSystem/MainMenu.h"
+#include "MenuSystem/PregameMenu.h"
 #include "Input/Reply.h"
 #include "MenuSystem/PauseMenu.h"
 #include "RtsPlayerController.h"
@@ -23,6 +24,13 @@ URTSGameInstance::URTSGameInstance(const FObjectInitializer& ObjectInitializer)
      {
           MenuClass = MenuBPClass.Class;
           UE_LOG(LogTemp, Warning, TEXT("Menu class set"));
+     }
+
+     ConstructorHelpers::FClassFinder<UUserWidget> PregameMenuBPClass(TEXT("/Game/MenuSystem/WBP_PregameMenu"));
+     if(PregameMenuBPClass.Class != nullptr)
+     {
+          PregameMenuClass = PregameMenuBPClass.Class;
+          UE_LOG(LogTemp, Warning, TEXT("Pregame Menu class set"));
      }
 
      ConstructorHelpers::FClassFinder<UUserWidget> PauseMenuBPClass(TEXT("/Game/MenuSystem/WBP_PauseMenu"));
@@ -55,6 +63,22 @@ void URTSGameInstance::LoadMenu()
      Menu->SetMenuInterface(this);
 }
 
+void URTSGameInstance::LoadPregameMenu() 
+{
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     Cast<ARtsPlayerController>(PlayerController)->Server_ChangePlayerState(EPlayerState::Menu);
+     PregameMenu = CreateWidget<UPregameMenu>(this, PregameMenuClass);
+     if (!ensure(PregameMenu))
+     {
+          UE_LOG(LogTemp, Warning, TEXT("PregameMenu not created in load PregameMenu"));
+          return;
+     }
+     
+     PregameMenu->Setup();
+
+     PregameMenu->SetMenuInterface(this);
+}
+
 void URTSGameInstance::LoadPauseMenu() 
 {
      APlayerController* PlayerController = GetFirstLocalPlayerController();
@@ -65,6 +89,17 @@ void URTSGameInstance::LoadPauseMenu()
      PauseMenu->Setup();
 
      PauseMenu->SetMenuInterface(this);
+}
+
+void URTSGameInstance::SetPlayerReady(ARtsPlayerController* ReadyPlayer) 
+{
+     APlayerController* PlayerController = GetFirstLocalPlayerController();
+     PregameMenu->Teardown();
+     Cast<ARtsPlayerController>(PlayerController)->Server_ChangePlayerState(EPlayerState::Default);
+     // Fix input mode
+     FInputModeGameOnly InputModeData;
+     InputModeData.SetConsumeCaptureMouseDown(false);
+     PlayerController->SetInputMode(InputModeData);
 }
 
 void URTSGameInstance::Host() 
@@ -97,11 +132,8 @@ void URTSGameInstance::Join(const FString& Address)
      {
           Menu->Teardown();
      }
-     // Fix input mode
-     FInputModeGameOnly InputModeData;
-     InputModeData.SetConsumeCaptureMouseDown(false);
+
      APlayerController* PlayerController = GetFirstLocalPlayerController();
-     PlayerController->SetInputMode(InputModeData);
 
      UEngine* Engine = GetEngine();
      if (!ensure(Engine)) return;
@@ -129,5 +161,5 @@ void URTSGameInstance::SetUsername(const FName& NewUsername)
 {
      ARtsPlayerController* PlayerController = Cast<ARtsPlayerController>(GetFirstLocalPlayerController());
      if(!ensure(PlayerController)) return;
-     // PlayerController->SetUsername(NewUsername);
+     PlayerController->Server_SetUsername(NewUsername);
 }

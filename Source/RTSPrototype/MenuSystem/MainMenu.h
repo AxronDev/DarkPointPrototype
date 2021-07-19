@@ -32,8 +32,8 @@ protected:
 
 private:
 
-	UPROPERTY(meta = (BindWidget))
-	UButton* EnterUserNameButton;
+	/* UPROPERTY(meta = (BindWidget))
+	UButton* EnterUserNameButton; */
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* HostButton;
@@ -62,11 +62,11 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	UEditableTextBox* IPAddressField;
 	
-	UPROPERTY(meta = (BindWidget))
-	UEditableTextBox* UserNameEntry;
+	/* UPROPERTY(meta = (BindWidget))
+	UEditableTextBox* UserNameEntry; */
 
-	UFUNCTION()
-	void SetUsername();
+	/* UFUNCTION()
+	void SetUsername(); */
 
 	UFUNCTION()
 	void HostServer();

@@ -9,6 +9,7 @@
 
 class UUserWidget;
 class UMainMenu;
+class UPregameMenu;
 class UPauseMenu;
 class ARtsPlayerController;
 
@@ -27,6 +28,8 @@ class RTSPROTOTYPE_API URTSGameInstance : public UGameInstance, public IMenuInte
 	UFUNCTION(BlueprintCallable)
 	void LoadMenu();
 
+	UFUNCTION(BlueprintCallable)
+	void LoadPregameMenu();
 
 	UFUNCTION()
 	void Host();
@@ -43,10 +46,12 @@ class RTSPROTOTYPE_API URTSGameInstance : public UGameInstance, public IMenuInte
 private:
 	TSubclassOf<UUserWidget> MenuClass;
 	TSubclassOf<UUserWidget> PauseMenuClass;
+	TSubclassOf<UUserWidget> PregameMenuClass;
 	
 	uint8 NumPlayers{0};
 
 	UMainMenu* Menu;
+	UPregameMenu* PregameMenu;
 	UPauseMenu* PauseMenu;
 
 public:
@@ -54,4 +59,6 @@ public:
 	virtual void LoadPauseMenu();
 
 	void NewPlayerController(ARtsPlayerController* NewPlayerController);
+
+	virtual void SetPlayerReady(ARtsPlayerController* ReadyPlayer);
 };

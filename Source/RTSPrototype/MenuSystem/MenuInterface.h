@@ -6,6 +6,8 @@
 #include "UObject/Interface.h"
 #include "MenuInterface.generated.h"
 
+class ARtsPlayerController;
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UMenuInterface : public UInterface
@@ -27,4 +29,5 @@ public:
 	// Leaves server and returns to main menu
 	virtual void QuitSession() = 0;
 	virtual void SetUsername(const FName& NewUsernameToSet) = 0;
+	virtual void SetPlayerReady(ARtsPlayerController* ReadyPlayer) = 0;
 };
